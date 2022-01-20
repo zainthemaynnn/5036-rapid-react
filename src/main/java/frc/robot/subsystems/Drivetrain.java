@@ -6,6 +6,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
+
+import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
 
@@ -59,5 +62,14 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putNumber("X", gyro.getPitch());
         SmartDashboard.putNumber("Y", gyro.getYaw());
         SmartDashboard.putNumber("Z", gyro.getRoll());
+    }
+
+    public static Drivetrain create() {
+        Spark LF = new Spark(RobotMap.PWM.FrontMotorLeft.getPort());
+        Spark RF = new Spark(RobotMap.PWM.FrontMotorRight.getPort());
+        Spark LB = new Spark (RobotMap.PWM.BackMotorLeft.getPort());
+        Spark RB = new Spark (RobotMap.PWM.BackMotorRight.getPort());
+
+        return new Drivetrain(List.asList(RF,LF), motorR, encoderL, encoderR, gyro)
     }
 }
