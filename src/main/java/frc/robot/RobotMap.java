@@ -8,10 +8,14 @@ public class RobotMap {
         FrontMotorLeft(2),
         FrontMotorRight(3);
 
-        public int port;
+        private int port;
 
         private PWM(int port) {
             this.port = port;
+        }
+
+        public int port() {
+            return port;
         }
     }
 
@@ -19,10 +23,14 @@ public class RobotMap {
         Driver(0),
         Operator(1);
 
-        public int port;
+        private int port;
 
         private Controller(int port) {
             this.port = port;
+        }
+
+        public int port() {
+            return port;
         }
     }
 }
