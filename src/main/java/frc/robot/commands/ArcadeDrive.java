@@ -12,15 +12,16 @@ public class ArcadeDrive implements Command {
     private Drivetrain drivetrain;
     private Controller driver;
 
-    public ArcadeDrive(Drivetrain drivetrain) {
+    public ArcadeDrive(Drivetrain drivetrain, Controller driver) {
         this.drivetrain = drivetrain;
+        this.driver = driver;
     }
 
     public void execute() {
-        double y = driver.getAxis(Controller.Axis.LeftY);
-        double x = driver.getAxis(Controller.Axis.RightX);
-        drivetrain.motorL.set(y + x);
-        drivetrain.motorR.set(y - x);
+        double forward = driver.getAxis(Controller.Axis.LeftY);
+        double rotation = driver.getAxis(Controller.Axis.RightX);
+        drivetrain.motorL.set(forward + rotation);
+        drivetrain.motorR.set(forward - rotation);
     }
 
     public void end() {
