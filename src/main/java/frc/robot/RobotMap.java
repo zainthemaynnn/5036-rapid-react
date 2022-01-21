@@ -8,14 +8,21 @@ public class RobotMap {
         FrontMotorLeft(2),
         FrontMotorRight(3);
 
-        int port;
+        public int port;
 
-        PWM(int port) {
+        private PWM(int port) {
             this.port = port;
         }
+    }
 
-        int getPort() {
-            return port;
+    public static enum Controller {
+        Driver(0),
+        Operator(1);
+
+        public int port;
+
+        private Controller(int port) {
+            this.port = port;
         }
     }
 }
