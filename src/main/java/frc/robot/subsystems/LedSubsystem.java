@@ -1,8 +1,6 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
@@ -28,26 +26,30 @@ public class LedSubsystem implements Subsystem  {
 
     }
 
-    // A quick 3 flash when ball is picked up.
-    public void ballPickUpFlash() {
+    public void flashTimes(double colour, int times, double duration) {
         if (isFlashing) { return; }
-        int count = 3;
-        while (count > 0) {
-            m_led.set(ScoreColourSpeed);
-            Timer.delay(0.5);
+        for (int i = 0; i < times; i++) {
+            m_led.set(colour);
+            Timer.delay(duration);
             m_led.set(0);
-            Timer.delay(0.5);
-            count++;
+            Timer.delay(duration);
         }
     }
 
+    // A quick 3 flash when ball is picked up.
+    public void ballPickUpFlash() {
+        flashTimes(ScoreColourSpeed, 3, 0.5);
+    }
+
     public void startFlashing() {
+        if (isFlashing) { return; }
         while (isFlashing) {
-            m_led.set(TimeColourSpeed);
-            Timer.delay(0.5);
-            m_led.set(0);
-            Timer.delay(0.5);
+            flashTimes(ScoreColourSpeed, 1, 0.5);
         }
+    }
+
+    public void bootUpFlash() {
+        flashTimes(bootUpColourSpeed, 3, 0.5);
     }
 
     public void endFlashing() {
@@ -58,5 +60,4 @@ public class LedSubsystem implements Subsystem  {
     public void periodic() {    
 
     }
-
 }
