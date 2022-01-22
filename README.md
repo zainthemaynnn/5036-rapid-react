@@ -16,3 +16,4 @@ frc team 5036's computer stuff for 2022
     A quick 3 flash when ball is picked up.  
     Also start flashing yellow or something when 30 seconds left
 8. Drive train characterization
+9. Use Roborio accelerometer to detect head on hits to automatically retract intake to mitigate damage
