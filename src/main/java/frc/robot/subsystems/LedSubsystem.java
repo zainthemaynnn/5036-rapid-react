@@ -1,8 +1,9 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.AddressableLED;
-import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
 // LEDs for driver feedback, programmer like a regular Spark Motor controller and PWM output
@@ -13,22 +14,18 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 
 public class LedSubsystem implements Subsystem  {
 
-    private static final int numberLeds = 40;
-
-    private static final AddressableLEDBuffer m_ledBuffer = new AddressableLEDBuffer(numberLeds);
-    private static final AddressableLED m_led = new AddressableLED(9); // change to PWM Port for LED Strip
-
+    private static final Spark m_led = new Spark(56);
     private static boolean isFlashing = false;
+    
+    public static final double bootUpColourSpeed = 0.5;
+    public static final double ScoreColourSpeed = 0.4;
+    public static final double TimeColourSpeed = 0.3;
 
-    public LedSubsystem() {
-        m_led.setLength(numberLeds);
-        m_led.start();
-    }
+    // https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf 
+    // for all the LED Information
 
-    public void setAllLeds(int red, int green, int blue) {
-        for (int i = 0; i < m_ledBuffer.getLength(); i++) {
-            m_ledBuffer.setRGB(i, red, green, blue);
-        }
+    public LedSubsystem() { 
+
     }
 
     // A quick 3 flash when ball is picked up.
@@ -36,7 +33,9 @@ public class LedSubsystem implements Subsystem  {
         if (isFlashing) { return; }
         int count = 3;
         while (count > 0) {
-            setAllLeds(0, 255, 0);
+            m_led.set(ScoreColourSpeed);
+            Timer.delay(0.5);
+            m_led.set(0);
             Timer.delay(0.5);
             count++;
         }
@@ -44,7 +43,9 @@ public class LedSubsystem implements Subsystem  {
 
     public void startFlashing() {
         while (isFlashing) {
-            setAllLeds(255, 255, 0);
+            m_led.set(TimeColourSpeed);
+            Timer.delay(0.5);
+            m_led.set(0);
             Timer.delay(0.5);
         }
     }
@@ -54,8 +55,8 @@ public class LedSubsystem implements Subsystem  {
     }
 
     @Override
-    public void periodic() {
-        m_led.setData(m_ledBuffer);
+    public void periodic() {    
+
     }
 
 }
