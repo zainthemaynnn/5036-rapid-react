@@ -16,4 +16,6 @@ public final class Constants {
     public static class NEO {
         // TODO
     }
+
+    public static final double CURVATURE_TURN_SENS = 1.0;
 }
