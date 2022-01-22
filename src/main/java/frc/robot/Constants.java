@@ -18,4 +18,5 @@ public final class Constants {
     }
 
     public static final double CURVATURE_TURN_SENS = 1.0;
+    public static final double TRACK_WIDTH = 0.6; // TODO
 }

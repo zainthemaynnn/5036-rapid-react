@@ -8,12 +8,17 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.math.estimator.DifferentialDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Nat;
 
 import com.kauailabs.navx.frc.AHRS;
 
-import frc.robot.RobotMap;
 import frc.robot.Constants;
 
 public class Drivetrain implements Subsystem {
@@ -23,7 +28,13 @@ public class Drivetrain implements Subsystem {
     public DifferentialDrive drive;
     public PIDController pidL, pidR;
     public SimpleMotorFeedforward feedforward;
-    public DifferentialDrivePoseEstimator poseEstimator;
+
+    // odometry
+    private DifferentialDriveKinematics kinematics;
+    private DifferentialDriveWheelSpeeds wheelSpeeds;
+    private ChassisSpeeds chassisSpeeds;
+    private DifferentialDriveOdometry odometry;
+    public Pose2d pose;
 
     private int ks, kv;
     private int kp, ki, kd;
@@ -42,6 +53,13 @@ public class Drivetrain implements Subsystem {
         this.encoderR = encoderR;
         this.gyro = gyro;
 
+        kinematics = new DifferentialDriveKinematics(Constants.TRACK_WIDTH);
+        wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getRate(), encoderR.getRate());
+        chassisSpeeds = kinematics.toChassisSpeeds(wheelSpeeds);
+        odometry = new DifferentialDriveOdometry(
+            new Rotation2d(Math.toRadians(-gyro.getAngle()))
+        );
+
         drive = new DifferentialDrive(motorL, motorR);
         // ks = Constants.NEO.ks;
         // kv = Constants.NEO.kv;
@@ -55,29 +73,38 @@ public class Drivetrain implements Subsystem {
         this.encoderR.reset();
     }
 
-    private double clamp(double n, double min, double max) {
-        return Math.min(Math.max(n, min), max);
-    }
-
-    public double getEncAvg() {
-        return (encoderL.getDistance() + encoderR.getDistance()) / 2;
-    }
-
     public void stop() {
         motorL.set(0);
         motorR.set(0);
     }
 
     public void periodic() {
+        pose = odometry.update(
+            new Rotation2d(Math.toRadians(-gyro.getAngle())),
+            encoderL.getDistance(),
+            encoderR.getDistance()
+        );
 
+        updateDashboard();
     }
 
     public void updateDashboard() {
-        SmartDashboard.putNumber("L", motorL.get());
-        SmartDashboard.putNumber("R", motorR.get());
+        SmartDashboard.putNumber("MotorL", motorL.get());
+        SmartDashboard.putNumber("MotorR", motorR.get());
 
-        SmartDashboard.putNumber("X", gyro.getPitch());
-        SmartDashboard.putNumber("Y", gyro.getYaw());
-        SmartDashboard.putNumber("Z", gyro.getRoll());
+        SmartDashboard.putNumber("X", pose.getX());
+        SmartDashboard.putNumber("Y", pose.getY());
+        SmartDashboard.putNumber("Rotation", pose.getRotation().getDegrees());
+
+        SmartDashboard.putNumber("vX", chassisSpeeds.vxMetersPerSecond);
+        SmartDashboard.putNumber("vY", chassisSpeeds.vyMetersPerSecond);
+        // I don't know how badly this will affect performance. leaving it out for now.
+        /* SmartDashboard.putNumber("Velocity",
+            Math.sqrt(
+                Math.pow(chassisSpeeds.vyMetersPerSecond, 2) +
+                Math.pow(chassisSpeeds.vxMetersPerSecond, 2)
+            )
+        );*/
+        SmartDashboard.putNumber("Angular Velocity", -Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
     }
 }
