@@ -28,8 +28,7 @@ public class CurvatureDrive implements Command {
 
         double overPower;
         double angularPower;
-        boolean isQuickTurn = false;
-
+        boolean isQuickTurn = drivetrain.stopped();
         if (isQuickTurn) {
             if (Math.abs(throttle) < 0.2) {
                 double alpha = 0.1;

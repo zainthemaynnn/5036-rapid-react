@@ -72,6 +72,10 @@ public class Drivetrain implements Subsystem {
         motorR.set(0);
     }
 
+    public boolean stopped() {
+        return motorL.get() == 0 && motorR.get() == 0;
+    }
+
     public double getAvgEncDistance() {
         return (encoderL.getDistance() + encoderR.getDistance()) / 2;
     }
