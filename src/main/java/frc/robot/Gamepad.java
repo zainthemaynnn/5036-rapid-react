@@ -2,7 +2,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
 
-public class Controller {
+public class Gamepad {
     private Joystick joystick;
 
     public static enum Axis {
@@ -47,7 +47,7 @@ public class Controller {
         }
     }
 
-    public Controller(int port) {
+    public Gamepad(int port) {
         joystick = new Joystick(port);
     }
 
@@ -60,6 +60,11 @@ public class Controller {
             default:
                 return joystick.getRawAxis(axis.ordinal());
         }
+    }
+
+    public double getAxisWithDeadband(Axis axis, double deadband) {
+        double v = getAxis(axis);
+        return Math.abs(v) > deadband ? v : 0;
     }
 
     public boolean getButtonPressed(Button button) {

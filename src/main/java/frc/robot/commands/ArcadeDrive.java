@@ -6,22 +6,22 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
 import frc.robot.subsystems.Drivetrain;
-import frc.robot.Controller;
+import frc.robot.Gamepad;
 
 public class ArcadeDrive implements Command {
     private Drivetrain drivetrain;
-    private Controller driver;
+    private Gamepad driver;
 
-    public ArcadeDrive(Drivetrain drivetrain, Controller driver) {
+    public ArcadeDrive(Drivetrain drivetrain, Gamepad driver) {
         this.drivetrain = drivetrain;
         this.driver = driver;
     }
 
     public void execute() {
-        double forward = driver.getAxis(Controller.Axis.LeftY);
-        double rotation = driver.getAxis(Controller.Axis.RightX);
-        drivetrain.motorL.set(forward + rotation);
-        drivetrain.motorR.set(forward - rotation);
+        double throttle = driver.getAxisWithDeadband(Gamepad.Axis.LeftY, .02);
+        double wheel = driver.getAxisWithDeadband(Gamepad.Axis.RightX, .02);
+        drivetrain.motorL.set(throttle + wheel);
+        drivetrain.motorR.set(throttle - wheel);
     }
 
     public void end() {
