@@ -12,7 +12,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Nat;
@@ -26,18 +25,16 @@ public class Drivetrain implements Subsystem {
     public Encoder encoderL, encoderR;
     public AHRS gyro;
     public DifferentialDrive drive;
-    public PIDController pidL, pidR;
     public SimpleMotorFeedforward feedforward;
 
     // odometry
     private DifferentialDriveKinematics kinematics;
-    private DifferentialDriveWheelSpeeds wheelSpeeds;
-    private ChassisSpeeds chassisSpeeds;
-    private DifferentialDriveOdometry odometry;
+    public DifferentialDriveWheelSpeeds wheelSpeeds;
+    public ChassisSpeeds chassisSpeeds;
+    public DifferentialDriveOdometry odometry;
     public Pose2d pose;
 
     private int ks, kv;
-    private int kp, ki, kd;
     private static final int ERR_TOLERANCE = 5, DERIV_TOLERANCE = 10;
 
     public Drivetrain(
@@ -64,9 +61,6 @@ public class Drivetrain implements Subsystem {
         // ks = Constants.NEO.ks;
         // kv = Constants.NEO.kv;
         // feedforward = new SimpleMotorFeedforward(ks, kv);
-        kp = ki = kd = 0;
-        pidL = new PIDController(kp, ki, kd);
-        pidR = new PIDController(kp, ki, kd);
 
         this.gyro.reset();
         this.encoderL.reset();
@@ -76,6 +70,10 @@ public class Drivetrain implements Subsystem {
     public void stop() {
         motorL.set(0);
         motorR.set(0);
+    }
+
+    public double getAvgEncDistance() {
+        return (encoderL.getDistance() + encoderR.getDistance()) / 2;
     }
 
     public void periodic() {
