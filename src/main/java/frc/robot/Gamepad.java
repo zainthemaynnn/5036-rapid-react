@@ -6,35 +6,35 @@ public class Gamepad {
     private Joystick joystick;
 
     public static enum Axis {
-        LeftX,
-        LeftY,
+        LEFT_X,
+        LEFT_Y,
         L2,
         R2,
-        RightX,
-        RightY,
+        RIGHT_X,
+        RIGHT_Y,
     }
 
     public static enum Button {
         _z, // what button does this even go to?
-        Green,
-        Red,
-        Blue,
-        Yellow,
+        GREEN,
+        RED,
+        BLUE,
+        YELLOW,
         L1,
         L2,
-        Back,
-        Start,
+        BACK,
+        START,
     }
 
     public static enum POV {
-        Up,
-        UpRight,
-        Right,
-        DownRight,
-        Down,
-        DownLeft,
-        Left,
-        UpLeft;
+        UP,
+        UP_RIGHT,
+        RIGHT,
+        DOWN_RIGHT,
+        DOWN,
+        DOWN_LEFT,
+        LEFT,
+        UP_LEFT;
 
         private int heading;
 
@@ -54,8 +54,8 @@ public class Gamepad {
     public double getAxis(Axis axis) {
         switch (axis) {
             // invert Y axes
-            case LeftY:
-            case RightY:
+            case LEFT_Y:
+            case RIGHT_Y:
                 return -joystick.getRawAxis(axis.ordinal());
             default:
                 return joystick.getRawAxis(axis.ordinal());

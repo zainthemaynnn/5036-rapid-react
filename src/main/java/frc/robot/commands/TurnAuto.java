@@ -16,13 +16,11 @@ public class TurnAuto implements Command {
         this.drivetrain = drivetrain;
         kp = ki = kd = 0; // TODO
         pid = new PIDController(kp, ki, kd);
-        target = drivetrain.gyro.getAngle() + degrees;
+        target = drivetrain.getHeading() + degrees;
     }
 
     public void execute() {
-        double power = pid.calculate(drivetrain.gyro.getAngle(), target);
-        drivetrain.motorL.set(power);
-        drivetrain.motorR.set(-power);
+        drivetrain.arcadeDrive(0.0, pid.calculate(drivetrain.getHeading(), target));
     }
 
     public void end() {

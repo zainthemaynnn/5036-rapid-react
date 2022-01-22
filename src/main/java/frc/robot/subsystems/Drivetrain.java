@@ -1,7 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -21,25 +21,25 @@ import com.kauailabs.navx.frc.AHRS;
 import frc.robot.Constants;
 
 public class Drivetrain implements Subsystem {
-    public MotorControllerGroup motorL, motorR;
-    public Encoder encoderL, encoderR;
-    public AHRS gyro;
-    public DifferentialDrive drive;
-    public SimpleMotorFeedforward feedforward;
+    private MotorController motorL, motorR;
+    private Encoder encoderL, encoderR;
+    private AHRS gyro;
+    private SimpleMotorFeedforward feedforward;
 
     // odometry
     private DifferentialDriveKinematics kinematics;
     public DifferentialDriveWheelSpeeds wheelSpeeds;
     public ChassisSpeeds chassisSpeeds;
-    public DifferentialDriveOdometry odometry;
+    private DifferentialDriveOdometry odometry;
     public Pose2d pose;
 
     private int ks, kv;
     private static final int ERR_TOLERANCE = 5, DERIV_TOLERANCE = 10;
+    private double quickStopAccumulator = 0.0;
 
     public Drivetrain(
-        MotorControllerGroup motorL,
-        MotorControllerGroup motorR,
+        MotorController motorL,
+        MotorController motorR,
         Encoder encoderL,
         Encoder encoderR,
         AHRS gyro
@@ -51,13 +51,10 @@ public class Drivetrain implements Subsystem {
         this.gyro = gyro;
 
         kinematics = new DifferentialDriveKinematics(Constants.TRACK_WIDTH);
-        wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getRate(), encoderR.getRate());
-        chassisSpeeds = kinematics.toChassisSpeeds(wheelSpeeds);
         odometry = new DifferentialDriveOdometry(
             new Rotation2d(Math.toRadians(-gyro.getAngle()))
         );
 
-        drive = new DifferentialDrive(motorL, motorR);
         // ks = Constants.NEO.ks;
         // kv = Constants.NEO.kv;
         // feedforward = new SimpleMotorFeedforward(ks, kv);
@@ -65,6 +62,60 @@ public class Drivetrain implements Subsystem {
         this.gyro.reset();
         this.encoderL.reset();
         this.encoderR.reset();
+    }
+
+    private double clamp(double n, double min, double max) {
+        return Math.max(Math.min(n, min), max);
+    }
+
+    public void arcadeDrive(double throttle, double wheel) {
+        motorL.set(throttle + wheel);
+        motorR.set(throttle - wheel);
+    }
+
+    // https://github.com/Team254/FRC-2016-Public/blob/master/src/com/team254/frc2016/CheesyDriveHelper.java
+    public void curvatureDrive(double throttle, double wheel) {
+        double overPower;
+        double angularPower;
+        boolean isQuickTurn = stopped();
+
+        if (isQuickTurn) {
+            if (Math.abs(throttle) < 0.2) {
+                double alpha = 0.1;
+                quickStopAccumulator = (1 - alpha) * quickStopAccumulator + alpha * clamp(wheel, -1.0, 1.0) * 2;
+            }
+            overPower = 1.0;
+            angularPower = wheel;
+        } else {
+            overPower = 0.0;
+            angularPower = Math.abs(throttle) * wheel * Constants.CURVATURE_TURN_SENS - quickStopAccumulator;
+            if (quickStopAccumulator > 1) {
+                quickStopAccumulator -= 1;
+            } else if (quickStopAccumulator < -1) {
+                quickStopAccumulator += 1;
+            } else {
+                quickStopAccumulator = 0.0;
+            }
+        }
+
+        double rightPwm = throttle - angularPower;
+        double leftPwm = throttle + angularPower;
+        if (leftPwm > 1.0) {
+            rightPwm -= overPower * (leftPwm - 1.0);
+            leftPwm = 1.0;
+        } else if (rightPwm > 1.0) {
+            leftPwm -= overPower * (rightPwm - 1.0);
+            rightPwm = 1.0;
+        } else if (leftPwm < -1.0) {
+            rightPwm += overPower * (-1.0 - leftPwm);
+            leftPwm = -1.0;
+        } else if (rightPwm < -1.0) {
+            leftPwm += overPower * (-1.0 - rightPwm);
+            rightPwm = -1.0;
+        }
+
+        motorL.set(leftPwm);
+        motorR.set(rightPwm);
     }
 
     public void stop() {
@@ -76,11 +127,17 @@ public class Drivetrain implements Subsystem {
         return motorL.get() == 0 && motorR.get() == 0;
     }
 
+    public double getHeading() {
+        return gyro.getAngle();
+    }
+
     public double getAvgEncDistance() {
         return (encoderL.getDistance() + encoderR.getDistance()) / 2;
     }
 
     public void periodic() {
+        wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getRate(), encoderR.getRate());
+        chassisSpeeds = kinematics.toChassisSpeeds(wheelSpeeds);
         pose = odometry.update(
             new Rotation2d(Math.toRadians(-gyro.getAngle())),
             encoderL.getDistance(),
@@ -96,7 +153,7 @@ public class Drivetrain implements Subsystem {
 
         SmartDashboard.putNumber("X", pose.getX());
         SmartDashboard.putNumber("Y", pose.getY());
-        SmartDashboard.putNumber("Rotation", pose.getRotation().getDegrees());
+        SmartDashboard.putNumber("θ", pose.getRotation().getDegrees());
 
         SmartDashboard.putNumber("vX", chassisSpeeds.vxMetersPerSecond);
         SmartDashboard.putNumber("vY", chassisSpeeds.vyMetersPerSecond);
@@ -107,6 +164,6 @@ public class Drivetrain implements Subsystem {
                 Math.pow(chassisSpeeds.vxMetersPerSecond, 2)
             )
         );*/
-        SmartDashboard.putNumber("Angular Velocity", -Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
+        SmartDashboard.putNumber("vθ", -Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
     }
 }

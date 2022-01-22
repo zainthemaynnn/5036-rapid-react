@@ -22,9 +22,10 @@ public class DriveAuto implements Command {
     }
 
     public void execute() {
-        double power = pid.calculate(drivetrain.getAvgEncDistance(), target) * (reverse ? -1 : 1);
-        drivetrain.motorL.set(power);
-        drivetrain.motorR.set(power);
+        drivetrain.arcadeDrive(
+            pid.calculate(drivetrain.getAvgEncDistance(), target) * (reverse ? -1 : 1),
+            0.0
+        );
     }
 
     public void end() {

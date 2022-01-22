@@ -18,10 +18,10 @@ public class ArcadeDrive implements Command {
     }
 
     public void execute() {
-        double throttle = driver.getAxisWithDeadband(Gamepad.Axis.LeftY, .02);
-        double wheel = driver.getAxisWithDeadband(Gamepad.Axis.RightX, .02);
-        drivetrain.motorL.set(throttle + wheel);
-        drivetrain.motorR.set(throttle - wheel);
+        drivetrain.arcadeDrive(
+            driver.getAxisWithDeadband(Gamepad.Axis.LEFT_Y, .02),
+            driver.getAxisWithDeadband(Gamepad.Axis.RIGHT_X, .02)
+        );
     }
 
     public void end() {

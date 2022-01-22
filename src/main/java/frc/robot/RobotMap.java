@@ -3,10 +3,10 @@ package frc.robot;
 public class RobotMap {
     public static enum PWM {
         // example for now
-        BackMotorLeft(0),
-        BackMotorRight(1),
-        FrontMotorLeft(2),
-        FrontMotorRight(3);
+        BACK_MOTOR_LEFT(0),
+        BACK_MOTOR_RIGHT(1),
+        FRONT_MOTOR_LEFT(2),
+        FRONT_MOTOR_RIGHT(3);
 
         private int port;
 
@@ -20,8 +20,8 @@ public class RobotMap {
     }
 
     public static enum Controller {
-        Driver(0),
-        Operator(1);
+        DRIVER(0),
+        OPERATOR(1);
 
         private int port;
 
