@@ -71,7 +71,11 @@ public class Gamepad {
         return joystick.getRawButton(button.ordinal());
     }
 
+    public int getPOV() {
+        return joystick.getPOV(0);
+    }
+
     public boolean getPOVPressed(POV direction) {
-        return joystick.getPOV(0) == direction.heading();
+        return getPOV() == direction.heading();
     }
 }

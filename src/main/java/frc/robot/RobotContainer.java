@@ -4,8 +4,16 @@
 
 package frc.robot;
 
+import com.kauailabs.navx.frc.AHRS;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.SPI;
 import frc.robot.commands.CurvatureDrive;
 import frc.robot.commands.DriveAuto;
 import frc.robot.commands.ExampleCommand;
@@ -26,30 +34,26 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-
   private final ExampleCommand m_autoCommand = new ExampleCommand(m_exampleSubsystem);
 
-  // Subsystems
-  private final LedSubsystem m_ledSubsystem = new LedSubsystem();
-  private final Drivetrain m_drivetrain = new Drivetrain(motorL, motorR, encoderL, encoderR, gyro);
+  PowerDistribution pdp = new PowerDistribution();
+
   private final Limelight m_limelight = new Limelight();
+  private final LedSubsystem m_ledSubsystem = new LedSubsystem();
 
-  // Commands  
-  
-  private final CurvatureDrive m_curvatureDrive = new CurvatureDrive(driver, m_drivetrain);
-  
-  // Auto Commands
-
-  private final TurnAuto m_turnAuto = new TurnAuto(m_drivetrain, degrees);
-  private final DriveAuto m_driveAuto = new DriveAuto(m_drivetrain, distance, reverse);
-
-  // Buttons
-  private final RunCommand m_stopShooter = new RunCommand(() -> m_shooter.stopShooters(), m_shooter);
-  private final RunCommand m_indexerReverse = new RunCommand(()->m_indexer.runIndexer(-0.6,-0.6,-0.6), m_indexer);
-  private final RunCommand m_indexerStop = new RunCommand(()->m_indexer.runIndexer(0,0,0), m_indexer);
-  private final RunCommand m_intakeOut= new RunCommand(() -> m_intake.intakeOut(), m_intake);
-  private final RunCommand m_intakeIn= new RunCommand(() -> m_intake.intakeIn(), m_intake);
-
+  private final Drivetrain m_drivetrain = new Drivetrain(
+    new MotorControllerGroup(
+      new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_LEFT.id(), MotorType.kBrushless),
+      new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless)
+    ),
+    new MotorControllerGroup(
+      new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless),
+      new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless)
+    ),
+    new Encoder(RobotMap.PWM.LEFT_ENCODER_IN.port(), RobotMap.PWM.LEFT_ENCODER_OUT.port(), false),
+    new Encoder(RobotMap.PWM.RIGHT_ENCODER_IN.port(), RobotMap.PWM.RIGHT_ENCODER_OUT.port(), true),
+    new AHRS(SPI.Port.kMXP)
+  );
 
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -74,6 +78,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return m_driveAuto;
+    return m_autoCommand;
   }
 }
