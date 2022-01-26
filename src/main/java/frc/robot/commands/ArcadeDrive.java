@@ -12,15 +12,15 @@ public class ArcadeDrive implements Command {
     private Drivetrain drivetrain;
     private Gamepad driver;
 
-    public ArcadeDrive(Drivetrain drivetrain, Gamepad driver) {
+    public ArcadeDrive(Gamepad driver, Drivetrain drivetrain) {
         this.drivetrain = drivetrain;
         this.driver = driver;
     }
 
     public void execute() {
         drivetrain.arcadeDrive(
-            driver.getAxisWithDeadband(Gamepad.Axis.LEFT_Y, .02),
-            driver.getAxisWithDeadband(Gamepad.Axis.RIGHT_X, .02)
+            driver.getAxis(Gamepad.Axis.LEFT_Y, .02),
+            driver.getAxis(Gamepad.Axis.RIGHT_X, .02)
         );
     }
 

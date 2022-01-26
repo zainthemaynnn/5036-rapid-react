@@ -1,21 +1,21 @@
 package frc.robot;
 
+import java.util.HashMap;
+
 import edu.wpi.first.wpilibj.Joystick;
 
 public class Gamepad {
-    private Joystick joystick;
-
     public static enum Axis {
         LEFT_X,
         LEFT_Y,
         L2,
         R2,
         RIGHT_X,
-        RIGHT_Y,
+        RIGHT_Y;
     }
 
-    public static enum Button {
-        _z, // what button does this even go to?
+    public static enum JoystickButton {
+        _UNUSED,
         GREEN,
         RED,
         BLUE,
@@ -23,10 +23,16 @@ public class Gamepad {
         L1,
         L2,
         BACK,
-        START,
+        START;
+    
+        static final JoystickButton[] listed = JoystickButton.values();
+
+        public static JoystickButton[] listed() {
+            return listed;
+        }
     }
 
-    public static enum POV {
+    public static enum POVButton {
         UP,
         UP_RIGHT,
         RIGHT,
@@ -37,18 +43,38 @@ public class Gamepad {
         UP_LEFT;
 
         private int heading;
+        static final POVButton[] listed = POVButton.values();
 
-        private POV() {
+        private POVButton() {
             heading = ordinal() * 45;
         }
 
         public int heading() {
             return heading;
         }
+
+        public static POVButton[] listed() {
+            return listed;
+        }
     }
+
+    private final Joystick joystick;
+    private final HashMap<Gamepad.JoystickButton, edu.wpi.first.wpilibj2.command.button.JoystickButton> buttons;
+    private final HashMap<Gamepad.POVButton, edu.wpi.first.wpilibj2.command.button.POVButton> povButtons;
+    // don't ask
 
     public Gamepad(int port) {
         joystick = new Joystick(port);
+
+        buttons = new HashMap<>();
+        for (Gamepad.JoystickButton button : Gamepad.JoystickButton.listed()) {
+            buttons.put(button, new edu.wpi.first.wpilibj2.command.button.JoystickButton(joystick, button.ordinal()));
+        }
+
+        povButtons = new HashMap<>();
+        for (Gamepad.POVButton povButton : Gamepad.POVButton.listed()) {
+            povButtons.put(povButton, new edu.wpi.first.wpilibj2.command.button.POVButton(joystick, povButton.heading()));
+        }
     }
 
     public double getAxis(Axis axis) {
@@ -62,20 +88,20 @@ public class Gamepad {
         }
     }
 
-    public double getAxisWithDeadband(Axis axis, double deadband) {
+    public double getAxis(Axis axis, double deadband) {
         double v = getAxis(axis);
         return Math.abs(v) > deadband ? v : 0;
     }
 
-    public boolean getButtonPressed(Button button) {
-        return joystick.getRawButton(button.ordinal());
+    public edu.wpi.first.wpilibj2.command.button.JoystickButton getButton(Gamepad.JoystickButton button) {
+        return buttons.get(button);
     }
 
-    public int getPOV() {
-        return joystick.getPOV(0);
+    public edu.wpi.first.wpilibj2.command.button.POVButton getPOV(Gamepad.POVButton povButton) {
+        return povButtons.get(povButton);
     }
 
-    public boolean getPOVPressed(POV direction) {
-        return getPOV() == direction.heading();
+    public int getPOVHeading() {
+        return joystick.getPOV();
     }
 }

@@ -37,13 +37,13 @@ public class RobotMap {
         }
     }
 
-    public static enum Controller {
+    public static enum Gamepad {
         DRIVER(0),
         OPERATOR(1);
 
         private final int port;
 
-        private Controller(int port) {
+        private Gamepad(int port) {
             this.port = port;
         }
 

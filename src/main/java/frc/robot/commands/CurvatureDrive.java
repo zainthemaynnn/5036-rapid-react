@@ -17,8 +17,8 @@ public class CurvatureDrive implements Command {
 
     public void execute() {
         drivetrain.curvatureDrive(
-            driver.getAxisWithDeadband(Gamepad.Axis.LEFT_Y, .02),
-            driver.getAxisWithDeadband(Gamepad.Axis.RIGHT_X, .02)
+            driver.getAxis(Gamepad.Axis.LEFT_Y, .02),
+            driver.getAxis(Gamepad.Axis.RIGHT_X, .02)
         );
     }
 

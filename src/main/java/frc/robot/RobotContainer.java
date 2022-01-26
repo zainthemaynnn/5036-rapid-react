@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.SPI;
+import frc.robot.commands.ArcadeDrive;
 import frc.robot.commands.CurvatureDrive;
 import frc.robot.commands.DriveAuto;
 import frc.robot.commands.ExampleCommand;
@@ -38,6 +39,9 @@ public class RobotContainer {
 
   PowerDistribution pdp = new PowerDistribution();
 
+  private final Gamepad driver = new Gamepad(RobotMap.Gamepad.DRIVER.port());
+  private final Gamepad operator = new Gamepad(RobotMap.Gamepad.OPERATOR.port());
+
   private final Limelight m_limelight = new Limelight();
   private final LedSubsystem m_ledSubsystem = new LedSubsystem();
 
@@ -55,9 +59,13 @@ public class RobotContainer {
     new AHRS(SPI.Port.kMXP)
   );
 
+  private final ArcadeDrive m_arcadeDrive = new ArcadeDrive(driver, m_drivetrain);
+  private final CurvatureDrive m_curvatureDrive = new CurvatureDrive(driver, m_drivetrain);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    m_drivetrain.setDefaultCommand(m_arcadeDrive); // TODO: decide drive style
+
     // Configure the button bindings
     configureButtonBindings();
   }
@@ -69,7 +77,7 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-
+    
   }
 
   /**
