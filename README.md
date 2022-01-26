@@ -3,9 +3,9 @@ frc team 5036's computer stuff for 2022
 
 
 ## TODO
-1. Drive with controller
-2. Autonomous drive PID (straight) - encoders
-3. Autonomous turning PID (gyro)
+1. ~~Drive with controller~~
+2. ~~Autonomous drive PID (straight) - encoders~~
+3. ~~Autonomous turning PID (gyro)~~
 4. Intake logic
 5. Conveyor logic
     conveyor and intake logic will take some time to get it automated and good
@@ -16,4 +16,3 @@ frc team 5036's computer stuff for 2022
     A quick 3 flash when ball is picked up.  
     Also start flashing yellow or something when 30 seconds left
 8. Drive train characterization
-9. Use Roborio accelerometer to detect head on hits to automatically retract intake to mitigate damage
