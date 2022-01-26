@@ -34,8 +34,9 @@ public class Drivetrain implements Subsystem {
     public Pose2d pose;
 
     private int ks, kv;
-    private static final int ERR_TOLERANCE = 5, DERIV_TOLERANCE = 10;
     private double quickStopAccumulator = 0.0;
+    private static final double ENCODER_DISTANCE_PER_PULSE =
+        Math.PI * 2 * Constants.WHEEL_RADIUS / Constants.ENCODER_RESOLUTION;
 
     public Drivetrain(
         MotorController motorL,
@@ -49,6 +50,11 @@ public class Drivetrain implements Subsystem {
         this.encoderL = encoderL;
         this.encoderR = encoderR;
         this.gyro = gyro;
+
+        motorL.setInverted(false);
+        motorR.setInverted(true);
+        encoderL.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
+        encoderR.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
 
         kinematics = new DifferentialDriveKinematics(Constants.TRACK_WIDTH);
         odometry = new DifferentialDriveOdometry(
@@ -77,7 +83,7 @@ public class Drivetrain implements Subsystem {
     public void curvatureDrive(double throttle, double wheel) {
         double overPower;
         double angularPower;
-        boolean isQuickTurn = stopped();
+        boolean isQuickTurn = stopped(); // TODO: is this right? might want to put a threshold > 0.
 
         if (isQuickTurn) {
             if (Math.abs(throttle) < 0.2) {
@@ -135,7 +141,7 @@ public class Drivetrain implements Subsystem {
         return (encoderL.getDistance() + encoderR.getDistance()) / 2;
     }
 
-    public void periodic() {
+    private void updateOdometry() {
         wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getRate(), encoderR.getRate());
         chassisSpeeds = kinematics.toChassisSpeeds(wheelSpeeds);
         pose = odometry.update(
@@ -143,11 +149,9 @@ public class Drivetrain implements Subsystem {
             encoderL.getDistance(),
             encoderR.getDistance()
         );
-
-        updateDashboard();
     }
 
-    public void updateDashboard() {
+    private void updateDashboard() {
         SmartDashboard.putNumber("MotorL", motorL.get());
         SmartDashboard.putNumber("MotorR", motorR.get());
 
@@ -157,13 +161,11 @@ public class Drivetrain implements Subsystem {
 
         SmartDashboard.putNumber("vX", chassisSpeeds.vxMetersPerSecond);
         SmartDashboard.putNumber("vY", chassisSpeeds.vyMetersPerSecond);
-        // I don't know how badly this will affect performance. leaving it out for now.
-        /* SmartDashboard.putNumber("Velocity",
-            Math.sqrt(
-                Math.pow(chassisSpeeds.vyMetersPerSecond, 2) +
-                Math.pow(chassisSpeeds.vxMetersPerSecond, 2)
-            )
-        );*/
         SmartDashboard.putNumber("vθ", -Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
+    }
+
+    public void periodic() {
+        updateOdometry();
+        updateDashboard();
     }
 }
