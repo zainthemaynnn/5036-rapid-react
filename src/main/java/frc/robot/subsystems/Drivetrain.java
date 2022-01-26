@@ -12,6 +12,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Nat;
@@ -21,19 +22,24 @@ import com.kauailabs.navx.frc.AHRS;
 import frc.robot.Constants;
 
 public class Drivetrain implements Subsystem {
+    // motors/sensors
     private MotorController motorL, motorR;
     private Encoder encoderL, encoderR;
     private AHRS gyro;
-    private SimpleMotorFeedforward feedforward;
 
     // odometry
-    private DifferentialDriveKinematics kinematics;
+    public SimpleMotorFeedforward feedforward;
+    public DifferentialDriveKinematics kinematics;
     public DifferentialDriveWheelSpeeds wheelSpeeds;
     public ChassisSpeeds chassisSpeeds;
     private DifferentialDriveOdometry odometry;
     public Pose2d pose;
 
-    private int ks, kv;
+    private final int kp = 0, ki = 0, kd = 0; // TODO
+    public PIDController pidL = new PIDController(kp, ki, kd);
+    public PIDController pidR = new PIDController(kp, ki, kd);
+
+    private final int ks = 0, kv = 0; // TODO
     private double quickStopAccumulator = 0.0;
     private static final double ENCODER_DISTANCE_PER_PULSE =
         Math.PI * 2 * Constants.WHEEL_RADIUS / Constants.ENCODER_RESOLUTION;
@@ -61,9 +67,7 @@ public class Drivetrain implements Subsystem {
             new Rotation2d(Math.toRadians(-gyro.getAngle()))
         );
 
-        // ks = Constants.NEO.ks;
-        // kv = Constants.NEO.kv;
-        // feedforward = new SimpleMotorFeedforward(ks, kv);
+        feedforward = new SimpleMotorFeedforward(ks, kv);
 
         this.gyro.reset();
         this.encoderL.reset();
