@@ -21,7 +21,6 @@ public final class Constants {
 
     public static final double CURVATURE_TURN_SENS = 1.0;
     public static final double TRACK_WIDTH = 0.6; // TODO
-    // borrowed these two from last year. will adjust if needed.
     public static final double WHEEL_RADIUS = Units.inchesToMeters(3.0);
-    public static final int ENCODER_RESOLUTION = 256;
+    public static final int ENCODER_RESOLUTION = 512;
 }
