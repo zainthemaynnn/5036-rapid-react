@@ -20,9 +20,10 @@ public final class Constants {
     }
 
     public static final double CURVATURE_TURN_SENS = 1.0;
-    public static final double TRACK_WIDTH = 0.6; // TODO
+    public static final double TRACK_WIDTH = Units.inchesToMeters(21.0);
     public static final double WHEEL_RADIUS = Units.inchesToMeters(3.0);
     public static final int ENCODER_RESOLUTION = 512;
-    public static final double MAX_VELOCITY = 10.0; // TODO
-    public static final double MAX_ACCELERATION = 10.0; // TODO
+    public static final double MAX_VELOCITY = Units.feetToMeters(12.98);
+    public static final double MAX_ACCELERATION = 2.0; // TODO: this is an estimate. get the actual one once the robot is complete.
+    public static final double DRIVE_MAX_VOLTAGE = 10.0; // ten's a good number, right?
 }

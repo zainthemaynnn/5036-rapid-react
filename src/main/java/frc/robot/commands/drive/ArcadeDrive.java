@@ -1,24 +1,27 @@
-package frc.robot.commands;
+package frc.robot.commands.drive;
 
 import java.util.Set;
+import java.util.function.DoubleSupplier;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+
 import frc.robot.subsystems.Drivetrain;
-import frc.robot.Gamepad;
 
-public class CurvatureDrive implements Command {
-    public Gamepad driver;
-    public Drivetrain drivetrain;
+public class ArcadeDrive implements Command {
+    private Drivetrain drivetrain;
+    private DoubleSupplier throttle, wheel;
 
-    public CurvatureDrive(Gamepad driver, Drivetrain drivetrain) {
-        this.driver = driver;
+    public ArcadeDrive(Drivetrain drivetrain, DoubleSupplier throttle, DoubleSupplier wheel) {
         this.drivetrain = drivetrain;
+        this.throttle = throttle;
+        this.wheel = wheel;
     }
 
     public void execute() {
-        drivetrain.curvatureDrive(
-            driver.getAxis(Gamepad.Axis.LEFT_Y, .02),
-            driver.getAxis(Gamepad.Axis.RIGHT_X, .02)
+        drivetrain.arcadeDrive(
+            throttle.getAsDouble(),
+            wheel.getAsDouble()
         );
     }
 

@@ -1,9 +1,7 @@
-package frc.robot.commands;
+package frc.robot.commands.drive;
 
-import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
-import frc.robot.Constants;
 import frc.robot.subsystems.Drivetrain;
 
 public class DriveTrajectory extends RamseteCommand {
@@ -11,24 +9,16 @@ public class DriveTrajectory extends RamseteCommand {
         super(
             trajectory,
             () -> drivetrain.pose,
-            new RamseteController(),
+            drivetrain.ramseteController,
             drivetrain.feedforward,
             drivetrain.kinematics,
             () -> drivetrain.wheelSpeeds,
             drivetrain.pidL,
             drivetrain.pidR,
-            (voltageL, voltageR) -> {
-                // TODO: what is this for?
-            },
+            drivetrain::tankDriveVolts,
             drivetrain
         );
-    }
 
-    public void execute() {
-
-    }
-
-    public boolean isFinished() {
-        return false;
+        drivetrain.resetOdometry(trajectory.getInitialPose());
     }
 }

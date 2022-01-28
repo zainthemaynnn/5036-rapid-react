@@ -24,7 +24,9 @@ public class RobotMap {
         BACK_MOTOR_LEFT(0),
         BACK_MOTOR_RIGHT(1),
         FRONT_MOTOR_LEFT(2),
-        FRONT_MOTOR_RIGHT(3);
+        FRONT_MOTOR_RIGHT(3),
+        INTAKE_TOP(4),
+        INTAKE_BOTTOM(5);
 
         private final int id;
 

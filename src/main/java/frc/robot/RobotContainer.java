@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -13,14 +15,21 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.SPI;
-import frc.robot.commands.ArcadeDrive;
-import frc.robot.commands.CurvatureDrive;
-import frc.robot.commands.DriveAuto;
+import frc.robot.Gamepad;
+import frc.robot.Gamepad.Axis;
+import frc.robot.Gamepad.Button;
 import frc.robot.commands.ExampleCommand;
-import frc.robot.commands.TurnAuto;
+import frc.robot.commands.conveyor.EjectCargo;
+import frc.robot.commands.drive.ArcadeDrive;
+import frc.robot.commands.drive.CurvatureDrive;
+import frc.robot.commands.drive.DriveAuto;
+import frc.robot.commands.drive.TurnAuto;
+import frc.robot.commands.intake.AdmitCargo;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LedSubsystem;
 import frc.robot.subsystems.Limelight;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -59,8 +68,26 @@ public class RobotContainer {
     new AHRS(SPI.Port.kMXP)
   );
 
-  private final ArcadeDrive m_arcadeDrive = new ArcadeDrive(driver, m_drivetrain);
-  private final CurvatureDrive m_curvatureDrive = new CurvatureDrive(driver, m_drivetrain);
+  private final Intake m_intake = new Intake(
+    new TalonSRX(RobotMap.CAN.INTAKE_BOTTOM.id()),
+    new TalonSRX(RobotMap.CAN.INTAKE_TOP.id())
+  );
+
+  private final ArcadeDrive m_arcadeDrive = new ArcadeDrive(
+    m_drivetrain,
+    () -> driver.getAxisValue(Gamepad.Axis.LEFT_Y, .02),
+    () -> driver.getAxisValue(Gamepad.Axis.RIGHT_X, .02)
+  );
+
+  private final CurvatureDrive m_curvatureDrive = new CurvatureDrive(
+    m_drivetrain,
+    () -> driver.getAxisValue(Gamepad.Axis.LEFT_Y, .02),
+    () -> driver.getAxisValue(Gamepad.Axis.RIGHT_X, .02)
+  );
+
+  private final AdmitCargo m_admitCargo = new AdmitCargo(m_intake);
+
+  private final EjectCargo m_ejectCargo = new EjectCargo();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -77,7 +104,8 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    
+    operator.getAxis(Axis.R2).whileActiveOnce(m_admitCargo);
+    operator.getButton(Button.R1).whenReleased(m_ejectCargo);
   }
 
   /**

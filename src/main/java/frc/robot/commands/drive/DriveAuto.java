@@ -1,4 +1,4 @@
-package frc.robot.commands;
+package frc.robot.commands.drive;
 
 import java.util.Set;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -6,21 +6,26 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.subsystems.Drivetrain;
 
-public class TurnAuto implements Command {
+public class DriveAuto implements Command {
     private Drivetrain drivetrain;
     private PIDController pid;
     private static int kp, ki, kd;
+    private boolean reverse;
     private double target;
 
-    public TurnAuto(Drivetrain drivetrain, double degrees) {
+    public DriveAuto(Drivetrain drivetrain, double distance, boolean reverse) {
         this.drivetrain = drivetrain;
+        this.reverse = reverse;
         kp = ki = kd = 0; // TODO
         pid = new PIDController(kp, ki, kd);
-        target = drivetrain.getHeading() + degrees;
+        target = drivetrain.getAvgEncDistance() - distance;
     }
 
     public void execute() {
-        drivetrain.arcadeDrive(0.0, pid.calculate(drivetrain.getHeading(), target));
+        drivetrain.arcadeDrive(
+            pid.calculate(drivetrain.getAvgEncDistance(), target) * (reverse ? -1 : 1),
+            0.0
+        );
     }
 
     public void end() {

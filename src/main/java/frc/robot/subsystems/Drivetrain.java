@@ -13,6 +13,7 @@ import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Nat;
@@ -38,8 +39,9 @@ public class Drivetrain implements Subsystem {
     private final int kp = 0, ki = 0, kd = 0; // TODO
     public PIDController pidL = new PIDController(kp, ki, kd);
     public PIDController pidR = new PIDController(kp, ki, kd);
+    public RamseteController ramseteController = new RamseteController();
 
-    private final int ks = 0, kv = 0; // TODO
+    private final int ks = 0, kv = 0, ka = 0; // TODO
     private double quickStopAccumulator = 0.0;
     private static final double ENCODER_DISTANCE_PER_PULSE =
         Math.PI * 2 * Constants.WHEEL_RADIUS / Constants.ENCODER_RESOLUTION;
@@ -67,11 +69,11 @@ public class Drivetrain implements Subsystem {
             new Rotation2d(Math.toRadians(-gyro.getAngle()))
         );
 
-        feedforward = new SimpleMotorFeedforward(ks, kv);
+        feedforward = new SimpleMotorFeedforward(ks, kv, ka);
 
-        this.gyro.reset();
-        this.encoderL.reset();
-        this.encoderR.reset();
+        gyro.reset();
+        encoderL.reset();
+        encoderR.reset();
     }
 
     private double clamp(double n, double min, double max) {
@@ -128,6 +130,11 @@ public class Drivetrain implements Subsystem {
         motorR.set(rightPwm);
     }
 
+    public void tankDriveVolts(double voltageL, double voltageR) {
+        motorL.setVoltage(voltageL);
+        motorR.setVoltage(voltageR);
+    }
+
     public void stop() {
         motorL.set(0);
         motorR.set(0);
@@ -139,6 +146,10 @@ public class Drivetrain implements Subsystem {
 
     public double getHeading() {
         return gyro.getAngle();
+    }
+
+    public double getHeadingRate() {
+        return gyro.getRate();
     }
 
     public double getAvgEncDistance() {
@@ -153,6 +164,12 @@ public class Drivetrain implements Subsystem {
             encoderL.getDistance(),
             encoderR.getDistance()
         );
+    }
+
+    public void resetOdometry(Pose2d newPose) {
+        encoderL.reset();
+        encoderR.reset();
+        odometry.resetPosition(newPose, gyro.getRotation2d());
     }
 
     private void updateDashboard() {
