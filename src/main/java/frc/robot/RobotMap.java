@@ -3,10 +3,11 @@ package frc.robot;
 public class RobotMap {
     public static enum PWM {
         // placeholders
-        RIGHT_ENCODER_IN(0),
-        RIGHT_ENCODER_OUT(1),
-        LEFT_ENCODER_IN(2),
-        LEFT_ENCODER_OUT(3);
+        RIGHT_ENCODER_IN    (0),
+        RIGHT_ENCODER_OUT   (1),
+        LEFT_ENCODER_IN     (2),
+        LEFT_ENCODER_OUT    (3),
+        BLINKIN             (4);
 
         private final int port;
 
@@ -21,12 +22,13 @@ public class RobotMap {
 
     public static enum CAN {
         // placeholders
-        BACK_MOTOR_LEFT(0),
-        BACK_MOTOR_RIGHT(1),
-        FRONT_MOTOR_LEFT(2),
-        FRONT_MOTOR_RIGHT(3),
-        INTAKE_TOP(4),
-        INTAKE_BOTTOM(5);
+        BACK_MOTOR_LEFT     (3),
+        BACK_MOTOR_RIGHT    (1),
+        FRONT_MOTOR_LEFT    (3),
+        FRONT_MOTOR_RIGHT   (4),
+        INTAKE_TOP          (5),
+        INTAKE_BOTTOM       (6),
+        ARM                 (7);
 
         private final int id;
 
@@ -40,8 +42,8 @@ public class RobotMap {
     }
 
     public static enum Gamepad {
-        DRIVER(0),
-        OPERATOR(1);
+        DRIVER      (0),
+        OPERATOR    (1);
 
         private final int port;
 

@@ -1,7 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
+import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
 // LEDs for driver feedback, programmer like a regular Spark Motor controller and PWM output
@@ -12,52 +12,60 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 
 public class LedSubsystem implements Subsystem  {
 
-    private static final Spark m_led = new Spark(56);
-    private static boolean isFlashing = false;
-    
-    public static final double bootUpColourSpeed = 0.5;
-    public static final double ScoreColourSpeed = 0.4;
-    public static final double TimeColourSpeed = 0.3;
+    private MotorController blinkin;
+    private boolean isFlashing = false;
+
+    public static enum BlinkinColor {
+        OFF     (0),
+        BOOT    (.5),
+        SCORE   (.4),
+        ENDGAME (.3);
+
+        private double value;
+
+        private BlinkinColor(double value) {
+            this.value = value;
+        }
+
+        public double value() {
+            return value;
+        }
+    }
 
     // https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf 
     // for all the LED Information
 
-    public LedSubsystem() { 
-
+    public LedSubsystem(MotorController blinkin) { 
+        this.blinkin = blinkin;
     }
 
-    public void flashTimes(double colour, int times, double duration) {
+    public void flashTimes(BlinkinColor color, int times, double duration) {
         if (isFlashing) { return; }
         for (int i = 0; i < times; i++) {
-            m_led.set(colour);
+            blinkin.set(color.value());
             Timer.delay(duration);
-            m_led.set(0);
+            blinkin.set(BlinkinColor.OFF.value());
             Timer.delay(duration);
         }
     }
 
     // A quick 3 flash when ball is picked up.
     public void ballPickUpFlash() {
-        flashTimes(ScoreColourSpeed, 3, 0.5);
+        flashTimes(BlinkinColor.SCORE, 3, 0.5);
     }
 
-    public void startFlashing() {
+    public void startFlashing(BlinkinColor color) {
         if (isFlashing) { return; }
         while (isFlashing) {
-            flashTimes(ScoreColourSpeed, 1, 0.5);
+            flashTimes(color, 1, 0.5);
         }
     }
 
     public void bootUpFlash() {
-        flashTimes(bootUpColourSpeed, 3, 0.5);
+        flashTimes(BlinkinColor.BOOT, 3, 0.5);
     }
 
     public void endFlashing() {
         isFlashing = false;
-    }
-
-    @Override
-    public void periodic() {    
-
     }
 }

@@ -78,7 +78,7 @@ public class Gamepad {
 
         axisTriggers = new HashMap<>();
         for (Gamepad.Axis axis : Axis.listed()) {
-            axisTriggers.put(axis, new Trigger(() -> getAxisValue(axis, .02) != 0));
+            axisTriggers.put(axis, new Trigger(() -> getAxisValue(axis) != 0));
         }
 
         buttonTriggers = new HashMap<>();
@@ -101,15 +101,10 @@ public class Gamepad {
             // invert Y axes
             case LEFT_Y:
             case RIGHT_Y:
-                return -joystick.getRawAxis(axis.ordinal());
+                return Constants.JOYSTICK_TRANSFORM.applyAsDouble(-joystick.getRawAxis(axis.ordinal()));
             default:
-                return joystick.getRawAxis(axis.ordinal());
+                return Constants.JOYSTICK_TRANSFORM.applyAsDouble(joystick.getRawAxis(axis.ordinal()));
         }
-    }
-
-    public double getAxisValue(Axis axis, double deadband) {
-        double v = getAxisValue(axis);
-        return Math.abs(v) > deadband ? v : 0;
     }
 
     public JoystickButton getButton(Button button) {

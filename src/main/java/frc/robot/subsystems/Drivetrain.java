@@ -1,30 +1,50 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj.motorcontrol.MotorController;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.math.estimator.DifferentialDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.MatBuilder;
-import edu.wpi.first.math.Nat;
+
+import java.security.KeyStore;
+import java.security.KeyStore.Entry;
+import java.util.Map;
 
 import com.kauailabs.navx.frc.AHRS;
 
 import frc.robot.Constants;
+import frc.robot.Dashboard;
 
 public class Drivetrain implements Subsystem {
+    // stupid thing isn't sendable. I made the stupid thing sendable.
+    private class SendableChassisSpeeds extends ChassisSpeeds implements Sendable {
+        public SendableChassisSpeeds(ChassisSpeeds speeds) {
+            super(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+        }
+
+        public void initSendable(SendableBuilder builder) {
+            builder.setSmartDashboardType("ChassisSpeeds");
+            builder.addDoubleProperty("vX", () -> vxMetersPerSecond, null);
+            builder.addDoubleProperty("vY", () -> vyMetersPerSecond, null);
+            builder.addDoubleProperty("vR", () -> omegaRadiansPerSecond, null);
+            builder.setActuator(true);
+        }
+    }
+
     // motors/sensors
-    private MotorController motorL, motorR;
+    private MotorControllerGroup motorL, motorR;
     private Encoder encoderL, encoderR;
     private AHRS gyro;
 
@@ -32,7 +52,7 @@ public class Drivetrain implements Subsystem {
     public SimpleMotorFeedforward feedforward;
     public DifferentialDriveKinematics kinematics;
     public DifferentialDriveWheelSpeeds wheelSpeeds;
-    public ChassisSpeeds chassisSpeeds;
+    public SendableChassisSpeeds chassisSpeeds;
     private DifferentialDriveOdometry odometry;
     public Pose2d pose;
 
@@ -46,9 +66,11 @@ public class Drivetrain implements Subsystem {
     private static final double ENCODER_DISTANCE_PER_PULSE =
         Math.PI * 2 * Constants.WHEEL_RADIUS / Constants.ENCODER_RESOLUTION;
 
+    private Dashboard dashboard;
+
     public Drivetrain(
-        MotorController motorL,
-        MotorController motorR,
+        MotorControllerGroup motorL,
+        MotorControllerGroup motorR,
         Encoder encoderL,
         Encoder encoderR,
         AHRS gyro
@@ -59,8 +81,8 @@ public class Drivetrain implements Subsystem {
         this.encoderR = encoderR;
         this.gyro = gyro;
 
-        motorL.setInverted(false);
-        motorR.setInverted(true);
+        motorL.setInverted(true);
+        motorR.setInverted(false);
         encoderL.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
         encoderR.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
 
@@ -68,21 +90,30 @@ public class Drivetrain implements Subsystem {
         odometry = new DifferentialDriveOdometry(
             new Rotation2d(Math.toRadians(-gyro.getAngle()))
         );
-
         feedforward = new SimpleMotorFeedforward(ks, kv, ka);
 
         gyro.reset();
         encoderL.reset();
         encoderR.reset();
+        updateOdometry();
+    
+        dashboard = new Dashboard("Drivetrain")
+            .add("Left motor", motorL)
+            .add("Right motor", motorR)
+            .add("Left encoder", encoderL)
+            .add("Right encoder", encoderR)
+            .add("Gyro", gyro)
+            .add("Velocity", chassisSpeeds);
     }
 
     private double clamp(double n, double min, double max) {
         return Math.max(Math.min(n, min), max);
     }
 
+    // this is aadi's
     public void arcadeDrive(double throttle, double wheel) {
-        motorL.set(throttle + wheel);
-        motorR.set(throttle - wheel);
+        motorL.set(throttle - wheel);
+        motorR.set(throttle + wheel);
     }
 
     // https://github.com/Team254/FRC-2016-Public/blob/master/src/com/team254/frc2016/CheesyDriveHelper.java
@@ -158,7 +189,7 @@ public class Drivetrain implements Subsystem {
 
     private void updateOdometry() {
         wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getRate(), encoderR.getRate());
-        chassisSpeeds = kinematics.toChassisSpeeds(wheelSpeeds);
+        chassisSpeeds = new SendableChassisSpeeds(kinematics.toChassisSpeeds(wheelSpeeds));
         pose = odometry.update(
             new Rotation2d(Math.toRadians(-gyro.getAngle())),
             encoderL.getDistance(),
@@ -172,21 +203,7 @@ public class Drivetrain implements Subsystem {
         odometry.resetPosition(newPose, gyro.getRotation2d());
     }
 
-    private void updateDashboard() {
-        SmartDashboard.putNumber("MotorL", motorL.get());
-        SmartDashboard.putNumber("MotorR", motorR.get());
-
-        SmartDashboard.putNumber("X", pose.getX());
-        SmartDashboard.putNumber("Y", pose.getY());
-        SmartDashboard.putNumber("θ", pose.getRotation().getDegrees());
-
-        SmartDashboard.putNumber("vX", chassisSpeeds.vxMetersPerSecond);
-        SmartDashboard.putNumber("vY", chassisSpeeds.vyMetersPerSecond);
-        SmartDashboard.putNumber("vθ", -Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
-    }
-
     public void periodic() {
         updateOdometry();
-        updateDashboard();
     }
 }

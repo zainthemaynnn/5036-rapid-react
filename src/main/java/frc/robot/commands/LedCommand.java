@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.subsystems.LedSubsystem;
+import frc.robot.subsystems.LedSubsystem.BlinkinColor;
 
 public class LedCommand implements Command {
 
@@ -27,7 +28,7 @@ public class LedCommand implements Command {
     @Override
     public void execute() {
         if (MATCH_TOTAL_TIME - ledTimer.get() == 30) {
-            m_ledSubsystem.startFlashing();
+            m_ledSubsystem.startFlashing(BlinkinColor.SCORE);
         }
     }
 
