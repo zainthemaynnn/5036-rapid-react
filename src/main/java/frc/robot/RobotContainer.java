@@ -5,37 +5,38 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SPI;
 import frc.robot.Gamepad;
-import frc.robot.Gamepad.Axis;
-import frc.robot.Gamepad.Button;
-import frc.robot.commands.arm.LowerArm;
-import frc.robot.commands.conveyor.EjectCargo;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
-import frc.robot.commands.drive.TurnAuto;
-import frc.robot.commands.intake.AdmitCargo;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LedSubsystem;
 import frc.robot.subsystems.Limelight;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.PIDCommand;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.button.NetworkButton;
+import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -44,8 +45,8 @@ import edu.wpi.first.wpilibj2.command.Command;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
-  PowerDistribution pdp = new PowerDistribution();
-  BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
+  //public static PowerDistribution pdp = new PowerDistribution();
+  private BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
 
   // The robot's subsystems and commands are defined here...
   private final Gamepad driver = new Gamepad(RobotMap.Gamepad.DRIVER.port());
@@ -54,14 +55,17 @@ public class RobotContainer {
   private final Limelight limelight = new Limelight();
   // private final LedSubsystem ledSubsystem = new LedSubsystem();
 
+  CANSparkMax L2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_LEFT.id(), MotorType.kBrushless);
+  CANSparkMax L1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless);
+  CANSparkMax R2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
+  CANSparkMax R1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless);
+
   private final Drivetrain drivetrain = new Drivetrain(
     new MotorControllerGroup(
-      //new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_LEFT.id(), MotorType.kBrushless),
-      new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless)
+      L1, L2
     ),
     new MotorControllerGroup(
-      //new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless),
-      new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless)
+      R1, R2
     ),
     new Encoder(RobotMap.PWM.LEFT_ENCODER_IN.port(), RobotMap.PWM.LEFT_ENCODER_OUT.port(), false),
     new Encoder(RobotMap.PWM.RIGHT_ENCODER_IN.port(), RobotMap.PWM.RIGHT_ENCODER_OUT.port(), true),
@@ -73,13 +77,13 @@ public class RobotContainer {
     new TalonSRX(RobotMap.CAN.INTAKE_TOP.id())
   );
 
-  private final Arm arm = new Arm(
-    new PWMSparkMax(RobotMap.CAN.ARM.id())
+  public final Arm arm = new Arm(
+    new CANSparkMax(RobotMap.CAN.ARM.id(), MotorType.kBrushless)
   );
 
-  private final LedSubsystem ledSubsystem = new LedSubsystem(
+  /*private final LedSubsystem ledSubsystem = new LedSubsystem(
     new Spark(RobotMap.PWM.BLINKIN.port())
-  );
+  );*/
 
   private final ArcadeDrive arcadeDrive = new ArcadeDrive(
     drivetrain,
@@ -93,13 +97,33 @@ public class RobotContainer {
     () -> driver.getAxisValue(Gamepad.Axis.RIGHT_X)
   );
 
-  private final AdmitCargo admitCargo = new AdmitCargo(intake, arm);
+  private final Command admitCargo = new StartEndCommand(
+    () -> intake.runPercent(1),
+    () -> intake.stop(),
+    intake
+  );
 
-  private final EjectCargo ejectCargo = new EjectCargo();
+  private final Command ejectCargo = new StartEndCommand(
+    () -> intake.runPercent(-1),
+    () -> intake.stop(),
+    intake
+  );
+
+  private final Command setArm = new PIDCommand(
+    new PIDController(.01, 0, 0),
+    arm::getPosition,
+    () -> arm.armTargetFromPercent(.9),
+    arm::setPower,
+    arm
+  );
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     drivetrain.setDefaultCommand(arcadeDrive); // TODO: decide drive style
+    L1.setIdleMode(IdleMode.kBrake);
+    L2.setIdleMode(IdleMode.kBrake);
+    R1.setIdleMode(IdleMode.kBrake);
+    R2.setIdleMode(IdleMode.kBrake);
 
     // Configure the button bindings
     configureButtonBindings();
@@ -112,8 +136,41 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    operator.getAxis(Axis.R2).whileActiveOnce(admitCargo);
-    operator.getButton(Button.R1).whenReleased(ejectCargo);
+    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
+
+    var pidArmDown = new PIDController(0, 0, 0);
+    pidArmDown.setTolerance(3);
+    /*driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(new PIDCommand(
+      pidArmDown,
+      arm::getPosition,
+      () -> 90,
+      arm::setPower,
+      arm
+    ));*/
+
+    var pidArmUp = new PIDController(0, 0, 0);
+    pidArmUp.setTolerance(3);
+
+    /*driver.getAxis(Gamepad.Axis.R2).whenInactive(new PIDCommand(
+      pidArmUp,
+      arm::getPosition,
+      () -> 31,
+      arm::setPower,
+      arm
+    ));*/
+
+    // this should be running in test mode. it's not.
+    arm.setDefaultCommand(
+      new PIDCommand(
+        pidArmDown,
+        arm::getPosition,
+        () -> 90,
+        arm::setPower,
+        arm
+      )
+    );
+
+    driver.getButton(Gamepad.Button.R1).whenReleased(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
   }
 
   /**

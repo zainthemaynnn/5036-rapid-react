@@ -1,6 +1,23 @@
 package frc.robot;
 
 public class RobotMap {
+    public static enum DIO {
+        LEFT_ENCODER_IN     (0),
+        LEFT_ENCODER_OUT    (1),
+        RIGHT_ENCODER_IN    (2),
+        RIGHT_ENCODER_OUT   (3);
+
+        private final int port;
+
+        private DIO(int port) {
+            this.port = port;
+        }
+
+        public int port() {
+            return port;
+        }
+    }
+
     public static enum PWM {
         // placeholders
         RIGHT_ENCODER_IN    (0),
@@ -22,13 +39,13 @@ public class RobotMap {
 
     public static enum CAN {
         // placeholders
-        BACK_MOTOR_LEFT     (3),
-        BACK_MOTOR_RIGHT    (1),
-        FRONT_MOTOR_LEFT    (3),
+        BACK_MOTOR_LEFT     (1),
+        BACK_MOTOR_RIGHT    (3),
+        FRONT_MOTOR_LEFT    (2),
         FRONT_MOTOR_RIGHT   (4),
-        INTAKE_TOP          (5),
+        INTAKE_TOP          (7),
         INTAKE_BOTTOM       (6),
-        ARM                 (7);
+        ARM                 (5);
 
         private final int id;
 
