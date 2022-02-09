@@ -68,8 +68,8 @@ public class RobotContainer {
     new MotorControllerGroup(
       R1, R2
     ),
-    new Encoder(RobotMap.PWM.LEFT_ENCODER_IN.port(), RobotMap.PWM.LEFT_ENCODER_OUT.port(), false),
-    new Encoder(RobotMap.PWM.RIGHT_ENCODER_IN.port(), RobotMap.PWM.RIGHT_ENCODER_OUT.port(), true),
+    new Encoder(RobotMap.DIO.LEFT_ENCODER_IN.port(), RobotMap.DIO.LEFT_ENCODER_OUT.port(), false),
+    new Encoder(RobotMap.DIO.RIGHT_ENCODER_IN.port(), RobotMap.DIO.RIGHT_ENCODER_OUT.port(), true),
     new AHRS(SPI.Port.kMXP)
   );
 
@@ -110,14 +110,6 @@ public class RobotContainer {
     intake
   );
 
-  private final Command setArm = new PIDCommand(
-    new PIDController(.01, 0, 0),
-    arm::getPosition,
-    () -> arm.armTargetFromPercent(.9),
-    arm::setPower,
-    arm
-  );
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     drivetrain.setDefaultCommand(arcadeDrive); // TODO: decide drive style
@@ -141,12 +133,17 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
-
+    // PID test
     SmartDashboard.putNumber("P", 0);
     SmartDashboard.putNumber("I", 0);
     SmartDashboard.putNumber("D", 0);
+    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(new DriveAuto(drivetrain, 4.0));
 
+    // intake
+    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
+    driver.getButton(Gamepad.Button.R1).whenReleased(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
+
+    // arm
     var pidArmDown = new PIDController(0.015, 0.001, 1.5);
     pidArmDown.setTolerance(3);
     driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(new PIDCommand(
@@ -166,17 +163,6 @@ public class RobotContainer {
       arm::setPower,
       arm
     ));
-
-    /*CommandScheduler.getInstance().schedule(new RunCommand(
-      () -> {
-        double p = SmartDashboard.getNumber("P", 0), i = SmartDashboard.getNumber("I", 0), d = SmartDashboard.getNumber("D", 0);
-        pidArmDown.setPID(p, i, d);
-        pidArmUp.setPID(p, i, d);
-      }
-    ).perpetually());*/
-
-    driver.getButton(Gamepad.Button.R1).whenReleased(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
-    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(new TurnAuto(drivetrain, 30));
   }
 
   /**

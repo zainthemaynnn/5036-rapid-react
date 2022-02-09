@@ -4,8 +4,8 @@ public class RobotMap {
     public static enum DIO {
         LEFT_ENCODER_IN     (0),
         LEFT_ENCODER_OUT    (1),
-        RIGHT_ENCODER_IN    (2),
-        RIGHT_ENCODER_OUT   (3);
+        RIGHT_ENCODER_IN    (3),
+        RIGHT_ENCODER_OUT   (2);
 
         private final int port;
 

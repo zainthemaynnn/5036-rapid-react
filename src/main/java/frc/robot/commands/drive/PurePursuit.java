@@ -40,7 +40,7 @@ public class PurePursuit implements Command {
             Pose2d pose = state.poseMeters;
             Pose2d rel = pose.relativeTo(robotPose);
             if (Math.pow(rel.getX(), 2) + Math.pow(rel.getY(), 2) <= Math.pow(r, 2)) {
-                
+                // TODO
                 break;
             }
         }
