@@ -52,13 +52,13 @@ public class Drivetrain implements Subsystem {
     public SimpleMotorFeedforward feedforward;
     public DifferentialDriveKinematics kinematics;
     public DifferentialDriveWheelSpeeds wheelSpeeds;
-    public SendableChassisSpeeds chassisSpeeds;
+    private SendableChassisSpeeds chassisSpeeds;
     private DifferentialDriveOdometry odometry;
-    public Pose2d pose;
+    private Pose2d pose;
 
     private final int kp = 0, ki = 0, kd = 0; // TODO
-    public PIDController pidL = new PIDController(kp, ki, kd);
-    public PIDController pidR = new PIDController(kp, ki, kd);
+    //public PIDController pidL = new PIDController(kp, ki, kd);
+    //public PIDController pidR = new PIDController(kp, ki, kd);
     public RamseteController ramseteController = new RamseteController();
 
     private final int ks = 0, kv = 0, ka = 0; // TODO
@@ -81,8 +81,8 @@ public class Drivetrain implements Subsystem {
         this.encoderR = encoderR;
         this.gyro = gyro;
 
-        motorL.setInverted(true);
-        motorR.setInverted(false);
+        motorL.setInverted(false);
+        motorR.setInverted(true);
         encoderL.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
         encoderR.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
 
@@ -112,8 +112,8 @@ public class Drivetrain implements Subsystem {
 
     // this is aadi's
     public void arcadeDrive(double throttle, double wheel) {
-        motorL.set(throttle - wheel);
-        motorR.set(throttle + wheel);
+        motorL.set(throttle + wheel);
+        motorR.set(throttle - wheel);
     }
 
     // https://github.com/Team254/FRC-2016-Public/blob/master/src/com/team254/frc2016/CheesyDriveHelper.java
@@ -185,6 +185,14 @@ public class Drivetrain implements Subsystem {
 
     public double getAvgEncDistance() {
         return (encoderL.getDistance() + encoderR.getDistance()) / 2;
+    }
+
+    public Pose2d getPose() {
+        return pose;
+    }
+
+    public ChassisSpeeds getVelocity() {
+        return chassisSpeeds;
     }
 
     private void updateOdometry() {

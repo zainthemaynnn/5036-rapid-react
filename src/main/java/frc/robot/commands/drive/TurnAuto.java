@@ -9,14 +9,19 @@ import frc.robot.subsystems.Drivetrain;
 public class TurnAuto implements Command {
     private Drivetrain drivetrain;
     private PIDController pid;
-    private static int kp, ki, kd;
+    private static final double kp = 0.0125, ki = 0, kd = 2;
     private double target;
+    private double degrees;
 
     public TurnAuto(Drivetrain drivetrain, double degrees) {
         this.drivetrain = drivetrain;
-        kp = ki = kd = 0; // TODO
+        this.degrees = degrees;
         pid = new PIDController(kp, ki, kd);
+    }
+
+    public void initialize() {
         target = drivetrain.getHeading() + degrees;
+        pid.reset();
     }
 
     public void execute() {

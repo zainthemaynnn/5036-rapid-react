@@ -1,25 +1,28 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.IMotorController;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.Constants;
 
 public class Intake implements Subsystem {
-    private IMotorController bottom, top;
+    private TalonSRX uno, dos;
 
-    public Intake(IMotorController top, IMotorController bottom) {
-        this.top = top;
-        this.bottom = bottom;
+    public Intake(TalonSRX uno, TalonSRX dos) {
+        this.dos = uno;
+        this.uno = dos;
+        uno.setNeutralMode(NeutralMode.Brake);
+        dos.setNeutralMode(NeutralMode.Brake);
     }
 
-    public void run() {
-        top.set(ControlMode.PercentOutput, Constants.INTAKE_POWER);
-        bottom.set(ControlMode.PercentOutput, Constants.INTAKE_POWER);
+    public void runPercent(double p) {
+        dos.set(ControlMode.PercentOutput, p * Constants.INTAKE_POWER);
+        uno.set(ControlMode.PercentOutput, p * Constants.INTAKE_POWER);
     }
 
-    public void periodic() {
-
+    public void stop() {
+        runPercent(0);
     }
 }
