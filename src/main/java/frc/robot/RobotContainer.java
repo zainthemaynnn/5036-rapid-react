@@ -25,6 +25,7 @@ import frc.robot.Gamepad;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
+import frc.robot.commands.drive.TurnAuto;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
@@ -98,7 +99,7 @@ public class RobotContainer {
   );
 
   private final Command admitCargo = new StartEndCommand(
-    () -> intake.runPercent(1),
+    () -> intake.runPercent(.75),
     () -> intake.stop(),
     intake
   );
@@ -129,6 +130,10 @@ public class RobotContainer {
     configureButtonBindings();
   }
 
+  public Command createAutoCommand() {
+    return new TurnAuto(drivetrain, 90);
+  }
+
   /**
    * Use this method to define your button->command mappings. Buttons can be created by
    * instantiating a {@link GenericHID} or one of its subclasses ({@link
@@ -142,17 +147,17 @@ public class RobotContainer {
     SmartDashboard.putNumber("I", 0);
     SmartDashboard.putNumber("D", 0);
 
-    var pidArmDown = new PIDController(0, 0, 0);
+    var pidArmDown = new PIDController(0.015, 0.001, 1.5);
     pidArmDown.setTolerance(3);
     driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(new PIDCommand(
       pidArmDown,
       arm::getPosition,
-      () -> 90,
+      () -> 98,
       arm::setPower,
       arm
     ));
 
-    var pidArmUp = new PIDController(0, 0, 0);
+    var pidArmUp = new PIDController(0.015, 0.001, 1.5);
     pidArmUp.setTolerance(3);
     driver.getAxis(Gamepad.Axis.R2).whenInactive(new PIDCommand(
       pidArmUp,
@@ -162,15 +167,16 @@ public class RobotContainer {
       arm
     ));
 
-    CommandScheduler.getInstance().schedule(new RunCommand(
+    /*CommandScheduler.getInstance().schedule(new RunCommand(
       () -> {
         double p = SmartDashboard.getNumber("P", 0), i = SmartDashboard.getNumber("I", 0), d = SmartDashboard.getNumber("D", 0);
         pidArmDown.setPID(p, i, d);
         pidArmUp.setPID(p, i, d);
       }
-    ));
+    ).perpetually());*/
 
     driver.getButton(Gamepad.Button.R1).whenReleased(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
+    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(new TurnAuto(drivetrain, 30));
   }
 
   /**

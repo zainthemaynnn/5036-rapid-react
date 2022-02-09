@@ -8,13 +8,10 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.Constants;
-import frc.robot.RobotContainer;
 
 public class Arm implements Subsystem {
     private MotorController motor;
     private RelativeEncoder encoder;
-    /*private static final double ENCODER_DISTANCE_PER_PULSE =
-        (Math.PI * 2) / Constants.ENCODER_RESOLUTION;*/
     private static final int ARM_UP = 31;
     private static final int ARM_DOWN = 90;
 
@@ -22,7 +19,6 @@ public class Arm implements Subsystem {
         this.motor = motor;
         encoder = motor.getEncoder();
         motor.setIdleMode(IdleMode.kBrake);
-        encoder.setPositionConversionFactor((ARM_DOWN - ARM_UP) / Constants.ARM_TARGET_ANGLE);
         SmartDashboard.putNumber("Gravity", 0);
     }
 
@@ -35,15 +31,15 @@ public class Arm implements Subsystem {
     }*/
 
     public double getPosition() {
-        return -encoder.getPosition() + ARM_UP;
+        return (encoder.getPosition() * (ARM_DOWN - ARM_UP)) / Constants.ARM_TARGET_ANGLE + ARM_UP;
     }
 
     public double armTargetFromPercent(double p) {
-        return p * (ARM_UP + (ARM_DOWN - ARM_UP));
+        return p * (ARM_DOWN - ARM_UP) + ARM_UP;
     }
 
     public void setPower(double power) {
-        power = (power + getGravityCompensation());// * getVoltageCompensation();
+        power = (-power + getGravityCompensation());// * getVoltageCompensation();
         motor.set(Math.abs(power) < Constants.ARM_MAX_POWER ? power : Constants.ARM_MAX_POWER * Math.signum(power));
     }
 

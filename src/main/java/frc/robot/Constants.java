@@ -24,9 +24,8 @@ public final class Constants {
     public static final double MAX_VELOCITY = Units.feetToMeters(12.98);
     public static final double MAX_ACCELERATION = 2.0; // TODO: this is an estimate. get the actual one once the robot is complete.
     public static final double DRIVE_MAX_VOLTAGE = 10.0; // ten's a good number, right?
-    public static final double INTAKE_POWER = .9;
+    public static final double INTAKE_POWER = 1.0;
     public static final double ARM_MAX_POWER = .4;
-    public static final double ARM_RUN_TIME = 1;
     public static final DoubleUnaryOperator JOYSTICK_TRANSFORM = v -> {
         // TODO: find an optimal filter. it's on a polynomial right now.
         // https://www.desmos.com/calculator/lcucznkyiq
