@@ -31,7 +31,7 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LedSubsystem;
 import frc.robot.subsystems.Limelight;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.PIDCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.NetworkButton;
@@ -60,7 +60,7 @@ public class RobotContainer {
   CANSparkMax R2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
   CANSparkMax R1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless);
 
-  private final Drivetrain drivetrain = new Drivetrain(
+  public final Drivetrain drivetrain = new Drivetrain(
     new MotorControllerGroup(
       L1, L2
     ),
@@ -138,37 +138,37 @@ public class RobotContainer {
   private void configureButtonBindings() {
     driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
 
+    SmartDashboard.putNumber("P", 0);
+    SmartDashboard.putNumber("I", 0);
+    SmartDashboard.putNumber("D", 0);
+
     var pidArmDown = new PIDController(0, 0, 0);
     pidArmDown.setTolerance(3);
-    /*driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(new PIDCommand(
+    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(new PIDCommand(
       pidArmDown,
       arm::getPosition,
       () -> 90,
       arm::setPower,
       arm
-    ));*/
+    ));
 
     var pidArmUp = new PIDController(0, 0, 0);
     pidArmUp.setTolerance(3);
-
-    /*driver.getAxis(Gamepad.Axis.R2).whenInactive(new PIDCommand(
+    driver.getAxis(Gamepad.Axis.R2).whenInactive(new PIDCommand(
       pidArmUp,
       arm::getPosition,
       () -> 31,
       arm::setPower,
       arm
-    ));*/
+    ));
 
-    // this should be running in test mode. it's not.
-    arm.setDefaultCommand(
-      new PIDCommand(
-        pidArmDown,
-        arm::getPosition,
-        () -> 90,
-        arm::setPower,
-        arm
-      )
-    );
+    CommandScheduler.getInstance().schedule(new RunCommand(
+      () -> {
+        double p = SmartDashboard.getNumber("P", 0), i = SmartDashboard.getNumber("I", 0), d = SmartDashboard.getNumber("D", 0);
+        pidArmDown.setPID(p, i, d);
+        pidArmUp.setPID(p, i, d);
+      }
+    ));
 
     driver.getButton(Gamepad.Button.R1).whenReleased(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
   }
