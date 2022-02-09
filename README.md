@@ -1,5 +1,5 @@
 # 5036-rapid-react
-frc team 5036's computer stuff for 2022
+frc team 5036's computer stuffy stuff for 2022
 
 
 ## TODO
@@ -16,3 +16,4 @@ frc team 5036's computer stuff for 2022
     A quick 3 flash when ball is picked up.  
     Also start flashing yellow or something when 30 seconds left
 8. Drive train characterization
+9. Ball dropping logic (if using motor)
