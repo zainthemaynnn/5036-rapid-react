@@ -11,20 +11,14 @@ public class DriveAuto implements Command {
     private Drivetrain drivetrain;
     private PIDController driveController, turnController;
     private static int kp, ki, kd;
-    private boolean reverse;
     private double distance;
 
-    public DriveAuto(Drivetrain drivetrain, double distance, boolean reverse) {
+    public DriveAuto(Drivetrain drivetrain, double distance) {
         this.drivetrain = drivetrain;
         this.distance = distance;
-        this.reverse = reverse;
         kp = ki = kd = 0; // TODO
         driveController = new PIDController(kp, ki, kd);
         turnController = new PIDController(0, 0, 0);
-    }
-
-    public DriveAuto(Drivetrain drivetrain, double distance) {
-        this(drivetrain, distance, false);
     }
 
     public void initialize() {
@@ -37,7 +31,7 @@ public class DriveAuto implements Command {
     public void execute() {
         driveController.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
         drivetrain.arcadeDrive(
-            driveController.calculate(drivetrain.getAvgEncDistance()) * (reverse ? -1 : 1),
+            driveController.calculate(drivetrain.getAvgEncDistance()),
             turnController.calculate(drivetrain.getHeading())
         );
     }

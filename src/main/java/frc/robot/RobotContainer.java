@@ -162,6 +162,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return new DriveAuto(drivetrain, 1.0, false);
+    return new DriveAuto(drivetrain, 1.0);
   }
 }
