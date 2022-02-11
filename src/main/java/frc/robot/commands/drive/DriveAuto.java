@@ -12,7 +12,6 @@ public class DriveAuto implements Command {
     private PIDController driveController, turnController;
     private static int kp, ki, kd;
     private boolean reverse;
-    private double target, angleTarget;
     private double distance;
 
     public DriveAuto(Drivetrain drivetrain, double distance, boolean reverse) {

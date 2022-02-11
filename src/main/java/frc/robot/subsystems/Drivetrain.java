@@ -1,9 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,14 +11,8 @@ import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.util.sendable.SendableRegistry;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-
-import java.security.KeyStore;
-import java.security.KeyStore.Entry;
-import java.util.Map;
 
 import com.kauailabs.navx.frc.AHRS;
 
@@ -49,24 +41,19 @@ public class Drivetrain implements Subsystem {
     private AHRS gyro;
 
     // odometry
-    public SimpleMotorFeedforward feedforward;
-    public DifferentialDriveKinematics kinematics;
-    public DifferentialDriveWheelSpeeds wheelSpeeds;
+    private SimpleMotorFeedforward feedforward;
+    private DifferentialDriveKinematics kinematics;
+    private DifferentialDriveWheelSpeeds wheelSpeeds;
     private SendableChassisSpeeds chassisSpeeds;
     private DifferentialDriveOdometry odometry;
     private Pose2d pose;
 
-    private final int kp = 0, ki = 0, kd = 0; // TODO
-    //public PIDController pidL = new PIDController(kp, ki, kd);
-    //public PIDController pidR = new PIDController(kp, ki, kd);
     public RamseteController ramseteController = new RamseteController();
 
     private final int ks = 0, kv = 0, ka = 0; // TODO
     private double quickStopAccumulator = 0.0;
     private static final double ENCODER_DISTANCE_PER_PULSE =
         Math.PI * 2 * Constants.WHEEL_RADIUS / Constants.ENCODER_RESOLUTION;
-
-    private Dashboard dashboard;
 
     public Drivetrain(
         MotorControllerGroup motorL,
@@ -97,7 +84,7 @@ public class Drivetrain implements Subsystem {
         encoderR.reset();
         updateOdometry();
     
-        dashboard = new Dashboard("Drivetrain")
+        new Dashboard("Drivetrain")
             .add("Left motor", motorL)
             .add("Right motor", motorR)
             .add("Left encoder", encoderL)
