@@ -37,5 +37,5 @@ public final class Constants {
     public static final double ARM_TARGET_ANGLE = -22.33321762084961;
     public static final double ARM_LENGTH = Units.feetToMeters(4.0);
     public static final double SHOOTER_TIMEOUT = 0.5;
-    public static final double GRAVITY = 0.07;
+    public static final double GRAVITY = 0.2;
 }

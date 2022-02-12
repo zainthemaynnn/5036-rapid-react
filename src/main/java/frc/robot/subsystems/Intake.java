@@ -10,6 +10,10 @@ import frc.robot.Constants;
 public class Intake implements Subsystem {
     private TalonSRX uno, dos;
 
+    private double velocityCompensated(double power) {
+        return power;
+    }
+
     public Intake(TalonSRX uno, TalonSRX dos) {
         this.dos = uno;
         this.uno = dos;
@@ -18,8 +22,8 @@ public class Intake implements Subsystem {
     }
 
     public void runPercent(double p) {
-        dos.set(ControlMode.PercentOutput, p * Constants.INTAKE_POWER);
-        uno.set(ControlMode.PercentOutput, p * Constants.INTAKE_POWER);
+        uno.set(ControlMode.PercentOutput, velocityCompensated(p * Constants.INTAKE_POWER));
+        dos.set(ControlMode.PercentOutput, velocityCompensated(p * Constants.INTAKE_POWER));
     }
 
     public void stop() {

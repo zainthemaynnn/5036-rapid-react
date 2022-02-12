@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -9,12 +10,14 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 
 import com.kauailabs.navx.frc.AHRS;
+import com.revrobotics.RelativeEncoder;
 
 import frc.robot.Constants;
 import frc.robot.Dashboard;
@@ -37,7 +40,7 @@ public class Drivetrain implements Subsystem {
 
     // motors/sensors
     private MotorControllerGroup motorL, motorR;
-    private Encoder encoderL, encoderR;
+    private RelativeEncoder encoderL, encoderR;
     private AHRS gyro;
 
     // odometry
@@ -55,11 +58,13 @@ public class Drivetrain implements Subsystem {
     private static final double ENCODER_DISTANCE_PER_PULSE =
         Math.PI * 2 * Constants.WHEEL_RADIUS / Constants.ENCODER_RESOLUTION;
 
+    double lastL, lastR;
+
     public Drivetrain(
         MotorControllerGroup motorL,
         MotorControllerGroup motorR,
-        Encoder encoderL,
-        Encoder encoderR,
+        RelativeEncoder encoderL,
+        RelativeEncoder encoderR,
         AHRS gyro
     ) {
         this.motorL = motorL;
@@ -70,8 +75,8 @@ public class Drivetrain implements Subsystem {
 
         motorL.setInverted(false);
         motorR.setInverted(true);
-        encoderL.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
-        encoderR.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
+        encoderL.setPositionConversionFactor(42);
+        encoderR.setPositionConversionFactor(42);
 
         kinematics = new DifferentialDriveKinematics(Constants.TRACK_WIDTH);
         odometry = new DifferentialDriveOdometry(
@@ -79,16 +84,12 @@ public class Drivetrain implements Subsystem {
         );
         feedforward = new SimpleMotorFeedforward(ks, kv, ka);
 
-        gyro.reset();
-        encoderL.reset();
-        encoderR.reset();
+        resetOdometry(new Pose2d());
         updateOdometry();
     
         new Dashboard("Drivetrain")
             .add("Left motor", motorL)
             .add("Right motor", motorR)
-            .add("Left encoder", encoderL)
-            .add("Right encoder", encoderR)
             .add("Gyro", gyro)
             .add("Velocity", chassisSpeeds);
     }
@@ -170,8 +171,16 @@ public class Drivetrain implements Subsystem {
         return gyro.getRate();
     }
 
+    public double getEncL() {
+        return encoderL.getPosition() / 22.953;
+    }
+
+    public double getEncR() {
+        return -encoderR.getPosition() / 22.953;
+    }
+
     public double getAvgEncDistance() {
-        return (encoderL.getDistance() + encoderR.getDistance()) / 2;
+        return (getEncL() + getEncR()) / 2;
     }
 
     public Pose2d getPose() {
@@ -183,22 +192,25 @@ public class Drivetrain implements Subsystem {
     }
 
     private void updateOdometry() {
-        wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getRate(), encoderR.getRate());
+        wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getVelocity(), encoderR.getVelocity());
         chassisSpeeds = new SendableChassisSpeeds(kinematics.toChassisSpeeds(wheelSpeeds));
         pose = odometry.update(
             new Rotation2d(Math.toRadians(-gyro.getAngle())),
-            encoderL.getDistance(),
-            encoderR.getDistance()
+            Units.inchesToMeters(getEncL()),
+            Units.inchesToMeters(getEncR())
         );
     }
 
     public void resetOdometry(Pose2d newPose) {
-        encoderL.reset();
-        encoderR.reset();
+        gyro.reset();
+        encoderL.setPosition(0);
+        encoderR.setPosition(0);
         odometry.resetPosition(newPose, gyro.getRotation2d());
     }
 
     public void periodic() {
         updateOdometry();
+        SmartDashboard.putNumber("EncL", getEncL());
+        SmartDashboard.putNumber("EncR", getEncR());
     }
 }

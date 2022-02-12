@@ -10,15 +10,13 @@ import frc.robot.subsystems.Drivetrain;
 public class DriveAuto implements Command {
     private Drivetrain drivetrain;
     private PIDController driveController, turnController;
-    private static int kp, ki, kd;
     private double distance;
 
     public DriveAuto(Drivetrain drivetrain, double distance) {
         this.drivetrain = drivetrain;
         this.distance = distance;
-        kp = ki = kd = 0; // TODO
-        driveController = new PIDController(kp, ki, kd);
-        turnController = new PIDController(0, 0, 0);
+        driveController = new PIDController(0.015, 0, 0.03);
+        turnController = new PIDController(0.008, 0, 10);
     }
 
     public void initialize() {

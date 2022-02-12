@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -48,6 +49,9 @@ public class Robot extends TimedRobot {
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
     m_robotContainer.arm.updateDashboard();
+    SmartDashboard.putNumber("angle", m_robotContainer.drivetrain.getPose().getRotation().getDegrees());
+    SmartDashboard.putNumber("X", m_robotContainer.drivetrain.getPose().getX());
+    SmartDashboard.putNumber("Y", m_robotContainer.drivetrain.getPose().getY());
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -70,7 +74,9 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during autonomous. */
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    SmartDashboard.updateValues();
+  }
 
   @Override
   public void teleopInit() {

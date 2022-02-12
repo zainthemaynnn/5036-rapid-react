@@ -1,7 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.motorcontrol.MotorController;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
 // LEDs for driver feedback, programmer like a regular Spark Motor controller and PWM output
@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 
 public class LedSubsystem implements Subsystem  {
 
-    private MotorController blinkin;
+    private Spark blinkin;
     private boolean isFlashing = false;
 
     public static enum BlinkinColor {
@@ -21,30 +21,33 @@ public class LedSubsystem implements Subsystem  {
         SCORE   (.4),
         ENDGAME (.3);
 
-        private double value;
+        private double sparkValue;
 
-        private BlinkinColor(double value) {
-            this.value = value;
+        private BlinkinColor(double sparkValue) {
+            this.sparkValue = sparkValue;
         }
 
-        public double value() {
-            return value;
+        public double sparkValue() {
+            return sparkValue;
         }
     }
 
     // https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf 
     // for all the LED Information
 
-    public LedSubsystem(MotorController blinkin) { 
+    public LedSubsystem(Spark blinkin) { 
         this.blinkin = blinkin;
     }
 
     public void flashTimes(BlinkinColor color, int times, double duration) {
-        if (isFlashing) { return; }
+        if (isFlashing) {
+            return;
+        }
+
         for (int i = 0; i < times; i++) {
-            blinkin.set(color.value());
+            blinkin.set(color.sparkValue());
             Timer.delay(duration);
-            blinkin.set(BlinkinColor.OFF.value());
+            blinkin.set(BlinkinColor.OFF.sparkValue());
             Timer.delay(duration);
         }
     }

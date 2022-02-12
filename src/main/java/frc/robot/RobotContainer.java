@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.ArrayList;
+
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import com.kauailabs.navx.frc.AHRS;
@@ -12,7 +14,10 @@ import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
@@ -21,6 +26,7 @@ import edu.wpi.first.wpilibj.SPI;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
+import frc.robot.commands.drive.FollowTrajectory;
 import frc.robot.commands.drive.TurnAuto;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
@@ -29,6 +35,7 @@ import frc.robot.subsystems.LedSubsystem;
 import frc.robot.subsystems.Limelight;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.PIDCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 
 /**
@@ -59,8 +66,8 @@ public class RobotContainer {
     new MotorControllerGroup(
       R1, R2
     ),
-    new Encoder(RobotMap.DIO.LEFT_ENCODER_IN.port(), RobotMap.DIO.LEFT_ENCODER_OUT.port(), false),
-    new Encoder(RobotMap.DIO.RIGHT_ENCODER_IN.port(), RobotMap.DIO.RIGHT_ENCODER_OUT.port(), true),
+    L1.getEncoder(),
+    R1.getEncoder(),
     new AHRS(SPI.Port.kMXP)
   );
 
@@ -70,7 +77,8 @@ public class RobotContainer {
   );
 
   public final Arm arm = new Arm(
-    new CANSparkMax(RobotMap.CAN.ARM.id(), MotorType.kBrushless)
+    new CANSparkMax(RobotMap.CAN.ARM.id(), MotorType.kBrushless),
+    new DigitalInput(RobotMap.DIO.ARM_BOTTOM_LIMIT_SWITCH.port())
   );
 
   /*private final LedSubsystem ledSubsystem = new LedSubsystem(
@@ -104,10 +112,17 @@ public class RobotContainer {
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     drivetrain.setDefaultCommand(arcadeDrive); // TODO: decide drive style
-    L1.setIdleMode(IdleMode.kBrake);
-    L2.setIdleMode(IdleMode.kBrake);
-    R1.setIdleMode(IdleMode.kBrake);
-    R2.setIdleMode(IdleMode.kBrake);
+    //arm.setDefaultCommand(new RunCommand(arm::updateDashboard, arm));
+    IdleMode idleMode = IdleMode.kBrake;
+    L1.setIdleMode(idleMode);
+    L2.setIdleMode(idleMode);
+    R1.setIdleMode(idleMode);
+    R2.setIdleMode(idleMode);
+    double rampRate = 0.65;
+    L1.setClosedLoopRampRate(rampRate);
+    L2.setClosedLoopRampRate(rampRate);
+    R1.setClosedLoopRampRate(rampRate);
+    R2.setClosedLoopRampRate(rampRate);
 
     // Configure the button bindings
     configureButtonBindings();
@@ -124,11 +139,24 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
+    SmartDashboard.putBoolean("available", true);
     // PID test
     SmartDashboard.putNumber("P", 0);
     SmartDashboard.putNumber("I", 0);
     SmartDashboard.putNumber("D", 0);
-    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(new DriveAuto(drivetrain, 4.0));
+
+    ArrayList<Pose2d> path = new ArrayList<>();
+    drivetrain.resetOdometry(new Pose2d());
+    path.add(new Pose2d(
+      -1, 1, new Rotation2d()
+    ));
+    var c = new FollowTrajectory(
+      drivetrain,
+      path,
+      1.0
+    );
+  
+    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(c);
 
     // intake
     driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
@@ -136,17 +164,23 @@ public class RobotContainer {
 
     // arm
     var pidArmDown = new PIDController(0.015, 0.001, 1.5);
-    pidArmDown.setTolerance(3);
+    pidArmDown.setTolerance(3.0);
     driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(new PIDCommand(
       pidArmDown,
       arm::getPosition,
       () -> 98,
-      arm::setPower,
+      power -> {
+        if (arm.isDown() && arm.getLimSwitch()) {
+          arm.setPower(.2);
+        } else {
+          arm.setPower(power);
+        }
+      },
       arm
     ));
 
     var pidArmUp = new PIDController(0.015, 0.001, 1.5);
-    pidArmUp.setTolerance(3);
+    pidArmUp.setTolerance(3.0);
     driver.getAxis(Gamepad.Axis.R2).whenInactive(new PIDCommand(
       pidArmUp,
       arm::getPosition,
@@ -162,6 +196,15 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return new DriveAuto(drivetrain, 1.0);
+    ArrayList<Pose2d> path = new ArrayList<>();
+    drivetrain.resetOdometry(new Pose2d());
+    path.add(new Pose2d(
+      -1, 1, new Rotation2d()
+    ));
+    return new FollowTrajectory(
+      drivetrain,
+      path,
+      1.0
+    );
   }
 }
