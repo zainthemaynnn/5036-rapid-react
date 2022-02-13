@@ -6,12 +6,15 @@ import java.util.Set;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.trajectory.Trajectory;
-import edu.wpi.first.math.trajectory.Trajectory.State;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.devtools.PIDTuner;
 import frc.robot.subsystems.Drivetrain;
 
 public class FollowTrajectory implements Command {
@@ -19,51 +22,82 @@ public class FollowTrajectory implements Command {
     private Iterator<Pose2d> poseStream;
     private PIDController driveController, turnController;
     private double turnRate;
-    int n = 0;
+    private static final double MAX_TURN = 90.0;
+    private Pose2d next = new Pose2d(), diff = new Pose2d();
+    private ShuffleboardTab tab;
+    private double throttle, wheel;
 
-    public FollowTrajectory(Drivetrain drivetrain, List<Pose2d> trajectory, double turnRate) {
+    public FollowTrajectory(Drivetrain drivetrain, List<Pose2d> path, double turnRate) {
         this.drivetrain = drivetrain;
-        poseStream = trajectory.iterator();
-        driveController = new PIDController(0.015, 0, 0.03);
-        turnController = new PIDController(0.007, 0.02, 1);
+        poseStream = path.iterator();
+        driveController = new PIDTuner("Drive");//new PIDController(0.015, 0, 0.03);
+        turnController = new PIDTuner("Turn");//new PIDController(0.007, 0.02, 1);
+        driveController.setSetpoint(drivetrain.getPose().getX());
+        turnController.setSetpoint(drivetrain.getPose().getY());
+
+        tab = Shuffleboard.getTab("FollowTrajectory");
+        tab.addNumber("X", () -> drivetrain.getPose().getX());
+        tab.addNumber("Y", () -> drivetrain.getPose().getY());
+        tab.addNumber("R", () -> drivetrain.getPose().getRotation().getDegrees());
+        tab.addNumber("nX", () -> next.getX());
+        tab.addNumber("nY", () -> next.getY());
+        tab.addNumber("nR", () -> next.getRotation().getDegrees());
+        tab.addNumber("dX", () -> diff.getX());
+        tab.addNumber("dY", () -> diff.getY());
+        tab.addNumber("dR", () -> diff.getRotation().getDegrees());
+        tab.addNumber("Throttle", () -> throttle);
+        tab.addNumber("Wheel", () -> wheel);
+        tab.addBoolean("hasNext", poseStream::hasNext);
         this.turnRate = turnRate;
     }
 
-    public double clamp(double v, double min, double max) {
+    private double clamp(double v, double min, double max) {
         return Math.max(Math.min(v, min), max);
     }
 
-    public void init() {
-        SmartDashboard.putBoolean("finished", false);
+    private boolean atSetpoint() {
+        return driveController.atSetpoint() && turnController.atSetpoint();
     }
 
-    public void run() {
-        if (poseStream.hasNext()) {
-            Pose2d diff = poseStream.next().relativeTo(drivetrain.getPose());
-            driveController.setSetpoint(Units.metersToInches(diff.getY()));
-            turnController.setSetpoint(diff.getRotation().getDegrees() - Units.inchesToMeters(diff.getX() * turnRate));
-        }
+    private Transform2d createTransform(Pose2d initial, Pose2d last) {
+        Translation2d m_translation =
+        last.getTranslation()
+            .minus(initial.getTranslation());
+            //.rotateBy(initial.getRotation().unaryMinus());
 
-        SmartDashboard.putNumber("n", ++n);
+        Rotation2d m_rotation = last.getRotation().minus(initial.getRotation());
+        return new Transform2d(m_translation, m_rotation);
+    }
 
-        double throttle, wheel;
-        double absErr = Math.abs(turnController.getPositionError());
-        absErr = absErr > 90.0 ? absErr : 90.0;
-        throttle = clamp(driveController.calculate(drivetrain.getAvgEncDistance()) * (-absErr / 90.0) + 1, -.1, .1);
+    @Override
+    public void initialize() {
+        drivetrain.resetOdometry(new Pose2d());
+        next = new Pose2d(0, 60.92, new Rotation2d(Math.toRadians(90)));//poseStream.next();
+        Transform2d t = createTransform(drivetrain.getPose(), next);
+        diff = new Pose2d(t.getTranslation(), t.getRotation());
+        driveController.setSetpoint(diff.getY());
+        turnController.setSetpoint(next.getRotation().getDegrees()-90 - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));
+    }
+
+    @Override
+    public void execute() {
+        /*if (poseStream.hasNext() && atSetpoint()) {
+            next = new Pose2d(0, 60.92, new Rotation2d(Math.toRadians(90)));//poseStream.next();
+            diff = next.relativeTo(drivetrain.getPose());
+            driveController.setSetpoint(diff.getY());
+            turnController.setSetpoint(next.getRotation().getDegrees() - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));
+        }*/
+
+        double absErr = clamp(Math.abs(turnController.getPositionError()), 0.0, 90.0);
+        throttle = clamp(driveController.calculate(drivetrain.getEncAvg()) * (1 - absErr / 90.0), -.1, .1);
         wheel = clamp(turnController.calculate(drivetrain.getHeading()), -.1, .1);
 
-        //drivetrain.arcadeDrive(throttle, wheel);
+        drivetrain.arcadeDrive(throttle, wheel);
     }
 
-    public void end() {
-        SmartDashboard.putBoolean("finished", true);
-    }
-
+    @Override
     public boolean isFinished() {
-        if (!poseStream.hasNext() && driveController.atSetpoint() && turnController.atSetpoint()) {
-            return true;
-        }
-        return true;
+        return !poseStream.hasNext() && atSetpoint();
     }
 
     public Set<Subsystem> getRequirements() {
