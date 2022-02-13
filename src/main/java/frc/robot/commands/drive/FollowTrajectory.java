@@ -49,10 +49,16 @@ public class FollowTrajectory implements Command {
         tab.addNumber("Wheel", () -> wheel);
         tab.addBoolean("hasNext", poseStream::hasNext);
         this.turnRate = turnRate;
+
+        next = new Pose2d(0, 60.92, new Rotation2d());//poseStream.next();
+        Transform2d t = createTransform(drivetrain.getPose(), next);
+        diff = new Pose2d(t.getTranslation(), t.getRotation());
+        driveController.setSetpoint(diff.getY());
+        turnController.setSetpoint(next.getRotation().getDegrees() - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));
     }
 
     private double clamp(double v, double min, double max) {
-        return Math.max(Math.min(v, min), max);
+        return Math.min(Math.max(v, min), max);
     }
 
     private boolean atSetpoint() {
@@ -62,8 +68,8 @@ public class FollowTrajectory implements Command {
     private Transform2d createTransform(Pose2d initial, Pose2d last) {
         Translation2d m_translation =
         last.getTranslation()
-            .minus(initial.getTranslation());
-            //.rotateBy(initial.getRotation().unaryMinus());
+            .minus(initial.getTranslation())
+            .rotateBy(initial.getRotation().unaryMinus());
 
         Rotation2d m_rotation = last.getRotation().minus(initial.getRotation());
         return new Transform2d(m_translation, m_rotation);
@@ -71,12 +77,12 @@ public class FollowTrajectory implements Command {
 
     @Override
     public void initialize() {
-        drivetrain.resetOdometry(new Pose2d());
-        next = new Pose2d(0, 60.92, new Rotation2d(Math.toRadians(90)));//poseStream.next();
+        //drivetrain.resetOdometry(new Pose2d());
+        /*next = new Pose2d(17.90, 60.92, new Rotation2d());//poseStream.next();
         Transform2d t = createTransform(drivetrain.getPose(), next);
         diff = new Pose2d(t.getTranslation(), t.getRotation());
         driveController.setSetpoint(diff.getY());
-        turnController.setSetpoint(next.getRotation().getDegrees()-90 - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));
+        turnController.setSetpoint(next.getRotation().getDegrees() - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));*/
     }
 
     @Override
@@ -89,10 +95,11 @@ public class FollowTrajectory implements Command {
         }*/
 
         double absErr = clamp(Math.abs(turnController.getPositionError()), 0.0, 90.0);
-        throttle = clamp(driveController.calculate(drivetrain.getEncAvg()) * (1 - absErr / 90.0), -.1, .1);
-        wheel = clamp(turnController.calculate(drivetrain.getHeading()), -.1, .1);
+        throttle = driveController.calculate(drivetrain.getEncAvg()) * (1 - absErr / 90.0);
+        wheel = turnController.calculate(drivetrain.getHeading());
+        SmartDashboard.putNumber("clamped", clamp(wheel, -.1, .1));
 
-        drivetrain.arcadeDrive(throttle, wheel);
+        drivetrain.arcadeDrive(clamp(throttle, -.1, .1), clamp(wheel, -.1, .1));
     }
 
     @Override
