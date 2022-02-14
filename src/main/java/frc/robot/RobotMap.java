@@ -20,12 +20,7 @@ public class RobotMap {
     }
 
     public static enum PWM {
-        // placeholders
-        RIGHT_ENCODER_IN    (0),
-        RIGHT_ENCODER_OUT   (1),
-        LEFT_ENCODER_IN     (2),
-        LEFT_ENCODER_OUT    (3),
-        BLINKIN             (4);
+        BLINKIN (9);
 
         private final int port;
 

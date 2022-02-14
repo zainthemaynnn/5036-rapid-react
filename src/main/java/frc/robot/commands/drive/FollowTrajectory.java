@@ -6,12 +6,8 @@ import java.util.Set;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.devtools.PIDTuner;
@@ -23,6 +19,7 @@ public class FollowTrajectory implements Command {
     private PIDController driveController, turnController;
     private double turnRate;
     private static final double MAX_TURN = 90.0;
+
     private Pose2d next = new Pose2d(), diff = new Pose2d();
     private ShuffleboardTab tab;
     private double throttle, wheel;
@@ -32,8 +29,7 @@ public class FollowTrajectory implements Command {
         poseStream = path.iterator();
         driveController = new PIDTuner("Drive");//new PIDController(0.015, 0, 0.03);
         turnController = new PIDTuner("Turn");//new PIDController(0.007, 0.02, 1);
-        driveController.setSetpoint(drivetrain.getPose().getX());
-        turnController.setSetpoint(drivetrain.getPose().getY());
+        turnController.setTolerance(3);
 
         tab = Shuffleboard.getTab("FollowTrajectory");
         tab.addNumber("X", () -> drivetrain.getPose().getX());
@@ -49,12 +45,6 @@ public class FollowTrajectory implements Command {
         tab.addNumber("Wheel", () -> wheel);
         tab.addBoolean("hasNext", poseStream::hasNext);
         this.turnRate = turnRate;
-
-        next = new Pose2d(0, 60.92, new Rotation2d());//poseStream.next();
-        Transform2d t = createTransform(drivetrain.getPose(), next);
-        diff = new Pose2d(t.getTranslation(), t.getRotation());
-        driveController.setSetpoint(diff.getY());
-        turnController.setSetpoint(next.getRotation().getDegrees() - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));
     }
 
     private double clamp(double v, double min, double max) {
@@ -65,40 +55,39 @@ public class FollowTrajectory implements Command {
         return driveController.atSetpoint() && turnController.atSetpoint();
     }
 
-    private Transform2d createTransform(Pose2d initial, Pose2d last) {
-        Translation2d m_translation =
-        last.getTranslation()
-            .minus(initial.getTranslation())
-            .rotateBy(initial.getRotation().unaryMinus());
-
-        Rotation2d m_rotation = last.getRotation().minus(initial.getRotation());
-        return new Transform2d(m_translation, m_rotation);
-    }
-
     @Override
     public void initialize() {
-        //drivetrain.resetOdometry(new Pose2d());
-        /*next = new Pose2d(17.90, 60.92, new Rotation2d());//poseStream.next();
-        Transform2d t = createTransform(drivetrain.getPose(), next);
-        diff = new Pose2d(t.getTranslation(), t.getRotation());
-        driveController.setSetpoint(diff.getY());
-        turnController.setSetpoint(next.getRotation().getDegrees() - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));*/
+        drivetrain.resetOdometry(new Pose2d());
+        driveController.setSetpoint(0);
+        turnController.setSetpoint(0);
     }
 
     @Override
     public void execute() {
-        /*if (poseStream.hasNext() && atSetpoint()) {
-            next = new Pose2d(0, 60.92, new Rotation2d(Math.toRadians(90)));//poseStream.next();
+        if (poseStream.hasNext() && atSetpoint()) {
+            next = poseStream.next();
+            /*
+              INITIAL: new Pose2d(0, 0, new Rotation2d(A))
+              TARGET: new Pose2d(-10, 50, new Rotation2d(B))
+
+              A    B  X    Y
+              0    0  -10  +50
+              90   0  +50  +10
+              180  0  +10  -50
+              270  0  -10  -50
+
+              verdict: zero @ [N]; anti-clockwise
+              why the hell would they make it like this?
+            */
+
             diff = next.relativeTo(drivetrain.getPose());
             driveController.setSetpoint(diff.getY());
             turnController.setSetpoint(next.getRotation().getDegrees() - clamp(diff.getX() * turnRate, -MAX_TURN, MAX_TURN));
-        }*/
+        }
 
         double absErr = clamp(Math.abs(turnController.getPositionError()), 0.0, 90.0);
         throttle = driveController.calculate(drivetrain.getEncAvg()) * (1 - absErr / 90.0);
-        wheel = turnController.calculate(drivetrain.getHeading());
-        SmartDashboard.putNumber("clamped", clamp(wheel, -.1, .1));
-
+        wheel = -turnController.calculate(drivetrain.getPose().getRotation().getDegrees());
         drivetrain.arcadeDrive(clamp(throttle, -.1, .1), clamp(wheel, -.1, .1));
     }
 

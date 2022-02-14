@@ -16,11 +16,13 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SPI;
 import frc.robot.commands.drive.ArcadeDrive;
@@ -34,6 +36,7 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LedSubsystem;
 import frc.robot.subsystems.Limelight;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PIDCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
@@ -126,6 +129,9 @@ public class RobotContainer {
 
     // Configure the button bindings
     configureButtonBindings();
+
+    Spark blinkin = new Spark(RobotMap.PWM.BLINKIN.port());
+    blinkin.set(.45);
   }
 
   public Command createAutoCommand() {
@@ -139,24 +145,8 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    SmartDashboard.putBoolean("available", true);
-    // PID test
-    SmartDashboard.putNumber("P", 0);
-    SmartDashboard.putNumber("I", 0);
-    SmartDashboard.putNumber("D", 0);
-
-    ArrayList<Pose2d> path = new ArrayList<>();
-    drivetrain.resetOdometry(new Pose2d());
-    path.add(new Pose2d(
-      -1, 1, new Rotation2d()
-    ));
-    var c = new FollowTrajectory(
-      drivetrain,
-      path,
-      1.0
-    );
-  
-    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(c);
+    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(getAutonomousCommand());
+    driver.getButton(Gamepad.Button.BLUE).whenReleased(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
 
     // intake
     driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
@@ -199,7 +189,8 @@ public class RobotContainer {
     ArrayList<Pose2d> path = new ArrayList<>();
     drivetrain.resetOdometry(new Pose2d());
     path.add(new Pose2d(
-      -1, 1, new Rotation2d()
+      new Translation2d(17.90, 60.92),
+      new Rotation2d(Math.toRadians(90))
     ));
     return new FollowTrajectory(
       drivetrain,
