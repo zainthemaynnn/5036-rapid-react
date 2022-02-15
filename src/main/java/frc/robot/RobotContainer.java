@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SPI;
+import frc.hid.Gamepad;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
@@ -36,6 +37,7 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LedSubsystem;
 import frc.robot.subsystems.Limelight;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PIDCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -61,6 +63,7 @@ public class RobotContainer {
   CANSparkMax L1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless);
   CANSparkMax R2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
   CANSparkMax R1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless);
+  AHRS navx = new AHRS(SPI.Port.kMXP);
 
   public final Drivetrain drivetrain = new Drivetrain(
     new MotorControllerGroup(
@@ -71,7 +74,7 @@ public class RobotContainer {
     ),
     L1.getEncoder(),
     R1.getEncoder(),
-    new AHRS(SPI.Port.kMXP)
+    navx
   );
 
   private final Intake intake = new Intake(
@@ -83,6 +86,8 @@ public class RobotContainer {
     new CANSparkMax(RobotMap.CAN.ARM.id(), MotorType.kBrushless),
     new DigitalInput(RobotMap.DIO.ARM_BOTTOM_LIMIT_SWITCH.port())
   );
+
+  private final Spark blinkin = new Spark(RobotMap.PWM.BLINKIN.port());
 
   /*private final LedSubsystem ledSubsystem = new LedSubsystem(
     new Spark(RobotMap.PWM.BLINKIN.port())
@@ -129,9 +134,6 @@ public class RobotContainer {
 
     // Configure the button bindings
     configureButtonBindings();
-
-    Spark blinkin = new Spark(RobotMap.PWM.BLINKIN.port());
-    blinkin.set(.45);
   }
 
   public Command createAutoCommand() {
@@ -151,23 +153,30 @@ public class RobotContainer {
     // intake
     driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
     driver.getButton(Gamepad.Button.R1).whenReleased(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
+    //blinkin.set(-.97);
+
+    arm.setPower(.2);
 
     // arm
     var pidArmDown = new PIDController(0.015, 0.001, 1.5);
     pidArmDown.setTolerance(3.0);
-    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(new PIDCommand(
+    var pushDown = new PIDCommand(
       pidArmDown,
       arm::getPosition,
       () -> 98,
       power -> {
         if (arm.isDown() && arm.getLimSwitch()) {
           arm.setPower(.2);
+          blinkin.set(-.21);
         } else {
           arm.setPower(power);
+          blinkin.set(-.97);
         }
       },
       arm
-    ));
+    );
+
+    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(pushDown);
 
     var pidArmUp = new PIDController(0.015, 0.001, 1.5);
     pidArmUp.setTolerance(3.0);

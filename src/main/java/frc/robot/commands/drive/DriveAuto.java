@@ -19,29 +19,34 @@ public class DriveAuto implements Command {
         turnController = new PIDController(0.008, 0, 10);
     }
 
+    @Override
     public void initialize() {
         driveController.reset();
-        driveController.setSetpoint(drivetrain.getAvgEncDistance() - distance);
+        driveController.setSetpoint(drivetrain.getEncAvg() - distance);
         turnController.reset();
         turnController.setSetpoint(drivetrain.getHeading());
     }
 
+    @Override
     public void execute() {
         driveController.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
         drivetrain.arcadeDrive(
-            driveController.calculate(drivetrain.getAvgEncDistance()),
+            driveController.calculate(drivetrain.getEncAvg()),
             turnController.calculate(drivetrain.getHeading())
         );
     }
 
-    public void end() {
+    @Override
+    public void end(boolean interrupted) {
         drivetrain.stop();
     }
 
+    @Override
     public boolean isFinished() {
         return driveController.atSetpoint() && turnController.atSetpoint();
     }
 
+    @Override
     public Set<Subsystem> getRequirements() {
         return Set.of(drivetrain);
     }

@@ -179,7 +179,7 @@ public class Drivetrain implements Subsystem {
         return -encoderR.getPosition() / 22.953;
     }
 
-    public double getAvgEncDistance() {
+    public double getEncAvg() {
         return (getEncL() + getEncR()) / 2;
     }
 
@@ -194,10 +194,15 @@ public class Drivetrain implements Subsystem {
     private void updateOdometry() {
         wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getVelocity(), encoderR.getVelocity());
         chassisSpeeds = new SendableChassisSpeeds(kinematics.toChassisSpeeds(wheelSpeeds));
-        pose = odometry.update(
+        Pose2d poseMeters = odometry.update(
             new Rotation2d(Math.toRadians(-gyro.getAngle())),
             Units.inchesToMeters(getEncL()),
             Units.inchesToMeters(getEncR())
+        );
+        pose = new Pose2d(
+            Units.metersToInches(poseMeters.getX()),
+            Units.metersToInches(poseMeters.getY()),
+            poseMeters.getRotation()
         );
     }
 
@@ -208,9 +213,11 @@ public class Drivetrain implements Subsystem {
         odometry.resetPosition(newPose, gyro.getRotation2d());
     }
 
+    @Override
     public void periodic() {
         updateOdometry();
         SmartDashboard.putNumber("EncL", getEncL());
         SmartDashboard.putNumber("EncR", getEncR());
+        SmartDashboard.putNumber("EncAvg", getEncAvg());
     }
 }

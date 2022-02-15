@@ -1,10 +1,11 @@
-package frc.robot;
+package frc.hid;
 
 import java.util.HashMap;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants;
 
 public class Gamepad {
     public static enum Axis {

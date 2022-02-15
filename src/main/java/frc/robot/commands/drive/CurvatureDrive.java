@@ -17,6 +17,7 @@ public class CurvatureDrive implements Command {
         this.wheel = wheel;
     }
 
+    @Override
     public void execute() {
         drivetrain.curvatureDrive(
             throttle.getAsDouble(),
@@ -24,14 +25,17 @@ public class CurvatureDrive implements Command {
         );
     }
 
-    public void end() {
+    @Override
+    public void end(boolean interrupted) {
         drivetrain.stop();
     }
 
+    @Override
     public boolean isFinished() {
         return false;
     }
 
+    @Override
     public Set<Subsystem> getRequirements() {
         return Set.of(drivetrain);
     }
