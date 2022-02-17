@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.Timer;
+import java.util.PriorityQueue;
+
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
@@ -10,12 +11,11 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 // simple filtering where we ignore current spike on start up (1s ignore) because that also draws large current
 // Also start flashing yellow or something when 30 seconds left
 
-public class LedSubsystem implements Subsystem  {
-
+public class Blinkin implements Subsystem  {
     private Spark blinkin;
-    private boolean isFlashing = false;
 
     public static enum BlinkinColor {
+        DEFAULT (-.87),
         OFF     (0),
         BOOT    (.5),
         SCORE   (.4),
@@ -32,43 +32,27 @@ public class LedSubsystem implements Subsystem  {
         }
     }
 
+    private PriorityQueue<BlinkinColor> queue;
+
     // https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf 
     // for all the LED Information
 
-    public LedSubsystem(Spark blinkin) { 
-        this.blinkin = blinkin;
+    public Blinkin(int port) { 
+        blinkin = new Spark(port);
+        queue = new PriorityQueue<BlinkinColor>(BlinkinColor::compareTo);
+        addColor(BlinkinColor.DEFAULT);
     }
 
-    public void flashTimes(BlinkinColor color, int times, double duration) {
-        if (isFlashing) {
-            return;
-        }
-
-        for (int i = 0; i < times; i++) {
-            blinkin.set(color.sparkValue());
-            Timer.delay(duration);
-            blinkin.set(BlinkinColor.OFF.sparkValue());
-            Timer.delay(duration);
-        }
+    public void addColor(BlinkinColor color) {
+        queue.add(color);
     }
 
-    // A quick 3 flash when ball is picked up.
-    public void ballPickUpFlash() {
-        flashTimes(BlinkinColor.SCORE, 3, 0.5);
+    public void removeColor(BlinkinColor color) {
+        queue.remove(color);
     }
 
-    public void startFlashing(BlinkinColor color) {
-        if (isFlashing) { return; }
-        while (isFlashing) {
-            flashTimes(color, 1, 0.5);
-        }
-    }
-
-    public void bootUpFlash() {
-        flashTimes(BlinkinColor.BOOT, 3, 0.5);
-    }
-
-    public void endFlashing() {
-        isFlashing = false;
+    @Override
+    public void periodic() {
+        blinkin.set(queue.peek().sparkValue());
     }
 }

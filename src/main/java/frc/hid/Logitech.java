@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 
-public class Gamepad {
+public class Logitech {
     public static enum Axis {
         LEFT_X,
         LEFT_Y,
@@ -69,26 +69,26 @@ public class Gamepad {
     }
 
     private final Joystick joystick;
-    private final HashMap<Gamepad.Axis, Trigger> axisTriggers;
-    private final HashMap<Gamepad.Button, JoystickButton> buttonTriggers;
-    private final HashMap<Gamepad.POVButton, edu.wpi.first.wpilibj2.command.button.POVButton> povTriggers;
+    private final HashMap<Logitech.Axis, Trigger> axisTriggers;
+    private final HashMap<Logitech.Button, JoystickButton> buttonTriggers;
+    private final HashMap<Logitech.POVButton, edu.wpi.first.wpilibj2.command.button.POVButton> povTriggers;
     // don't ask
 
-    public Gamepad(int port) {
+    public Logitech(int port) {
         joystick = new Joystick(port);
 
         axisTriggers = new HashMap<>();
-        for (Gamepad.Axis axis : Axis.listed()) {
+        for (Logitech.Axis axis : Axis.listed()) {
             axisTriggers.put(axis, new Trigger(() -> getAxisValue(axis) != 0));
         }
 
         buttonTriggers = new HashMap<>();
-        for (Gamepad.Button button : Button.listed()) {
+        for (Logitech.Button button : Button.listed()) {
             buttonTriggers.put(button, new JoystickButton(joystick, button.ordinal()));
         }
 
         povTriggers = new HashMap<>();
-        for (Gamepad.POVButton povButton : Gamepad.POVButton.listed()) {
+        for (Logitech.POVButton povButton : Logitech.POVButton.listed()) {
             povTriggers.put(povButton, new edu.wpi.first.wpilibj2.command.button.POVButton(joystick, povButton.heading()));
         }
     }

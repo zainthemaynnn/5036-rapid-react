@@ -19,13 +19,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SPI;
-import frc.hid.Gamepad;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import frc.hid.PS4Controller;
+import frc.hid.XBOXController;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
@@ -34,12 +35,13 @@ import frc.robot.commands.drive.TurnAuto;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.LedSubsystem;
+import frc.robot.subsystems.Blinkin;
 import frc.robot.subsystems.Limelight;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PIDCommand;
+import edu.wpi.first.wpilibj2.command.PerpetualCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 
@@ -54,7 +56,7 @@ public class RobotContainer {
   private BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
 
   // The robot's subsystems and commands are defined here...
-  private final Gamepad driver = new Gamepad(RobotMap.Gamepad.DRIVER.port());
+  private final XBOXController driver = new XBOXController(RobotMap.Gamepad.DRIVER.port());
 
   private final Limelight limelight = new Limelight();
   // private final LedSubsystem ledSubsystem = new LedSubsystem();
@@ -87,7 +89,7 @@ public class RobotContainer {
     new DigitalInput(RobotMap.DIO.ARM_BOTTOM_LIMIT_SWITCH.port())
   );
 
-  private final Spark blinkin = new Spark(RobotMap.PWM.BLINKIN.port());
+  private final Blinkin blinkin = new Blinkin(RobotMap.PWM.BLINKIN.port());
 
   /*private final LedSubsystem ledSubsystem = new LedSubsystem(
     new Spark(RobotMap.PWM.BLINKIN.port())
@@ -95,14 +97,14 @@ public class RobotContainer {
 
   private final ArcadeDrive arcadeDrive = new ArcadeDrive(
     drivetrain,
-    () -> driver.getAxisValue(Gamepad.Axis.LEFT_Y),
-    () -> driver.getAxisValue(Gamepad.Axis.RIGHT_X)
+    driver.leftStickY::value,
+    driver.rightStickX::value
   );
 
   private final CurvatureDrive curvatureDrive = new CurvatureDrive(
     drivetrain,
-    () -> driver.getAxisValue(Gamepad.Axis.LEFT_Y),
-    () -> driver.getAxisValue(Gamepad.Axis.RIGHT_X)
+    driver.leftStickY::value,
+    driver.rightStickX::value
   );
 
   private final Command admitCargo = new StartEndCommand(
@@ -117,10 +119,53 @@ public class RobotContainer {
     intake
   );
 
+  private final PIDController
+    pidArmUp = new PIDController(0.015, 0.001, 1.5);
+
+  private final Command armUp = new PIDCommand(
+    pidArmUp,
+    arm::getPosition,
+    () -> 31,
+    power -> arm.setPower(Math.abs(power) < Constants.ARM_MAX_UP ? power : Constants.ARM_MAX_UP * Math.signum(power)),
+    arm
+  );
+
+  private Command createArmDownCommand() {
+    var pidArmDown = new PIDController(0.015, 0.001, 1.5);
+    pidArmDown.setTolerance(3.0);
+    return new PIDCommand(
+      pidArmDown,
+      arm::getPosition,
+      () -> 90,
+      power -> {
+        if (arm.isDown() && arm.getLimSwitch()) {
+          arm.setPower(.2);
+        } else {
+          arm.setPower(power);
+        }
+      },
+      arm
+    );
+  }
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     drivetrain.setDefaultCommand(arcadeDrive); // TODO: decide drive style
-    //arm.setDefaultCommand(new RunCommand(arm::updateDashboard, arm));
+
+    pidArmUp.setTolerance(3.0);
+
+    /*final float YAW_TIP_POINT = 25;
+    try {
+      arm.setDefaultCommand(new ConditionalCommand(
+        createArmDownCommand(),
+        armUp,
+        () -> Math.abs(navx.getYaw()) > YAW_TIP_POINT
+      ));
+    } catch (NullPointerException e) {
+      // TODO: this is a terrible idea. but why does it happen?
+    }*/
+    arm.setDefaultCommand(armUp);
+
     IdleMode idleMode = IdleMode.kBrake;
     L1.setIdleMode(idleMode);
     L2.setIdleMode(idleMode);
@@ -147,46 +192,24 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    driver.getButton(Gamepad.Button.GREEN).whileActiveOnce(getAutonomousCommand());
-    driver.getButton(Gamepad.Button.BLUE).whenReleased(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
+    driver.A.whileActiveOnce(getAutonomousCommand());
+    driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
 
     // intake
-    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(admitCargo);
-    driver.getButton(Gamepad.Button.R1).whenReleased(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
+    driver.rightTrigger.whileActiveOnce(admitCargo);
+    driver.rightBumper.whenInactive(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
     //blinkin.set(-.97);
 
-    arm.setPower(.2);
-
     // arm
-    var pidArmDown = new PIDController(0.015, 0.001, 1.5);
-    pidArmDown.setTolerance(3.0);
-    var pushDown = new PIDCommand(
-      pidArmDown,
-      arm::getPosition,
-      () -> 98,
-      power -> {
-        if (arm.isDown() && arm.getLimSwitch()) {
-          arm.setPower(.2);
-          blinkin.set(-.21);
-        } else {
-          arm.setPower(power);
-          blinkin.set(-.97);
-        }
-      },
-      arm
-    );
-
-    driver.getAxis(Gamepad.Axis.R2).whileActiveOnce(pushDown);
-
-    var pidArmUp = new PIDController(0.015, 0.001, 1.5);
-    pidArmUp.setTolerance(3.0);
-    driver.getAxis(Gamepad.Axis.R2).whenInactive(new PIDCommand(
-      pidArmUp,
-      arm::getPosition,
-      () -> 31,
-      arm::setPower,
-      arm
-    ));
+    driver.rightTrigger.whileActiveOnce(createArmDownCommand());
+    driver.rightTrigger.whenActive(new InstantCommand(() -> {
+      driver.setRumble(RumbleType.kLeftRumble, .5);
+      driver.setRumble(RumbleType.kRightRumble, .5);
+    }));
+    driver.rightTrigger.whenInactive(new InstantCommand(() -> {
+      driver.setRumble(RumbleType.kLeftRumble, .0);
+      driver.setRumble(RumbleType.kRightRumble, .0);
+    }));
   }
 
   /**

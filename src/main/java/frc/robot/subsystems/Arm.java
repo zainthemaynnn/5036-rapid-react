@@ -52,15 +52,12 @@ public class Arm implements Subsystem {
 
     public void setPower(double power) {
         power = -(power + getGravityCompensation());// * getVoltageCompensation();
-        motor.set(Math.abs(power) < Constants.ARM_MAX_POWER ? power : Constants.ARM_MAX_POWER * Math.signum(power));
+        motor.set(power);
     }
 
-    private static int i = 0;
     public void updateDashboard() {
         SmartDashboard.putNumber("Arm encoder", getPosition());
         SmartDashboard.putBoolean("Limit switch", limitSwitch.get());
-        SmartDashboard.putNumber("t", i);
-        ++i;
     }
 
     public void stop() {

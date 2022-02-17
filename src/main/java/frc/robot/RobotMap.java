@@ -55,8 +55,7 @@ public class RobotMap {
     }
 
     public static enum Gamepad {
-        DRIVER      (0),
-        OPERATOR    (1);
+        DRIVER  (1);
 
         private final int port;
 

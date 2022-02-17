@@ -27,8 +27,8 @@ public class FollowTrajectory implements Command {
     public FollowTrajectory(Drivetrain drivetrain, List<Pose2d> path, double turnRate) {
         this.drivetrain = drivetrain;
         poseStream = path.iterator();
-        driveController = new PIDTuner("Drive");//new PIDController(0.015, 0, 0.03);
-        turnController = new PIDTuner("Turn");//new PIDController(0.007, 0.02, 1);
+        driveController = new PIDController(0.015, 0, 0.03);
+        turnController = new PIDController(0.007, 0.02, 1);
         turnController.setTolerance(3);
 
         tab = Shuffleboard.getTab("FollowTrajectory");

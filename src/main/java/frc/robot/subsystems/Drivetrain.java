@@ -55,10 +55,6 @@ public class Drivetrain implements Subsystem {
 
     private final int ks = 0, kv = 0, ka = 0; // TODO
     private double quickStopAccumulator = 0.0;
-    private static final double ENCODER_DISTANCE_PER_PULSE =
-        Math.PI * 2 * Constants.WHEEL_RADIUS / Constants.ENCODER_RESOLUTION;
-
-    double lastL, lastR;
 
     public Drivetrain(
         MotorControllerGroup motorL,
