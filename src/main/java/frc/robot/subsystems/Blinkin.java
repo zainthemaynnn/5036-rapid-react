@@ -2,7 +2,10 @@ package frc.robot.subsystems;
 
 import java.util.PriorityQueue;
 
+import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
 // LEDs for driver feedback, programmer like a regular Spark Motor controller and PWM output
@@ -14,21 +17,36 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 public class Blinkin implements Subsystem  {
     private Spark blinkin;
 
-    public static enum BlinkinColor {
-        DEFAULT (-.87),
-        OFF     (0),
-        BOOT    (.5),
-        SCORE   (.4),
-        ENDGAME (.3);
+    // TODO: greatness will appear here soon
+    private static enum BlinkinMap {
+        ;
 
-        private double sparkValue;
+        private double value;
 
-        private BlinkinColor(double sparkValue) {
-            this.sparkValue = sparkValue;
+        private BlinkinMap(double value) {
+            this.value = value;
         }
 
-        public double sparkValue() {
-            return sparkValue;
+        public double value() {
+            return value;
+        }
+    }
+
+    public static enum BlinkinColor {
+        DEFAULT (.99),
+        OFF     (.99),
+        BOOT    (.35),
+        INTAKE  (.77),
+        SHOOT   (.35);
+
+        private double value;
+
+        private BlinkinColor(double value) {
+            this.value = value;
+        }
+
+        public double value() {
+            return value;
         }
     }
 
@@ -39,8 +57,7 @@ public class Blinkin implements Subsystem  {
 
     public Blinkin(int port) { 
         blinkin = new Spark(port);
-        queue = new PriorityQueue<BlinkinColor>(BlinkinColor::compareTo);
-        addColor(BlinkinColor.DEFAULT);
+        queue = new PriorityQueue<>(BlinkinColor::compareTo);
     }
 
     public void addColor(BlinkinColor color) {
@@ -51,8 +68,18 @@ public class Blinkin implements Subsystem  {
         queue.remove(color);
     }
 
-    @Override
-    public void periodic() {
-        blinkin.set(queue.peek().sparkValue());
+    public boolean containsColor(BlinkinColor color) {
+        return queue.contains(color);
+    }
+
+    public void display() {
+        if (!queue.isEmpty()) {
+            blinkin.set(queue.peek().value());
+        } else {
+            blinkin.set(BlinkinColor.DEFAULT.value());
+        }
+
+        SmartDashboard.putNumber("Size", queue.size());
+        SmartDashboard.putNumber("Blinkin", blinkin.get());
     }
 }

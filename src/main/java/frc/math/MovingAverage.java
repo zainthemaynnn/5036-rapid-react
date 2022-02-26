@@ -10,17 +10,17 @@ public class MovingAverage {
     public MovingAverage(int maxLen) {
         this.maxLen = maxLen;
         values = new LinkedList<>();
+        average = 0.0;
     }
 
     public void add(double value) {
         values.add(value);
         if (values.size() > maxLen) {
-            values.remove();
+            var first = values.remove();
+            average -= first / values.size();
         }
-
-        average = 0.0;
-        values.forEach(v -> average += v);
-        average /= values.size();
+            
+        average += value / values.size();
     }
 
     public double avg() {

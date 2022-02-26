@@ -187,18 +187,18 @@ public class Drivetrain implements Subsystem {
         return chassisSpeeds;
     }
 
-    private void updateOdometry() {
+    public void updateOdometry() {
         wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getVelocity(), encoderR.getVelocity());
         chassisSpeeds = new SendableChassisSpeeds(kinematics.toChassisSpeeds(wheelSpeeds));
         Pose2d poseMeters = odometry.update(
-            new Rotation2d(Math.toRadians(-gyro.getAngle())),
+            new Rotation2d(Math.toRadians(-gyro.getAngle()+90)),
             Units.inchesToMeters(getEncL()),
             Units.inchesToMeters(getEncR())
         );
         pose = new Pose2d(
             Units.metersToInches(poseMeters.getX()),
             Units.metersToInches(poseMeters.getY()),
-            poseMeters.getRotation()
+            poseMeters.getRotation().minus(new Rotation2d(Math.toRadians(90)))
         );
     }
 
@@ -207,13 +207,5 @@ public class Drivetrain implements Subsystem {
         encoderL.setPosition(0);
         encoderR.setPosition(0);
         odometry.resetPosition(newPose, gyro.getRotation2d());
-    }
-
-    @Override
-    public void periodic() {
-        updateOdometry();
-        SmartDashboard.putNumber("EncL", getEncL());
-        SmartDashboard.putNumber("EncR", getEncR());
-        SmartDashboard.putNumber("EncAvg", getEncAvg());
     }
 }

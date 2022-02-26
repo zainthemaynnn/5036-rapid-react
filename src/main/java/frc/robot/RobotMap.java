@@ -34,14 +34,13 @@ public class RobotMap {
     }
 
     public static enum CAN {
-        // placeholders
         BACK_MOTOR_LEFT     (1),
         BACK_MOTOR_RIGHT    (3),
         FRONT_MOTOR_LEFT    (2),
         FRONT_MOTOR_RIGHT   (4),
-        INTAKE_TOP          (7),
-        INTAKE_BOTTOM       (6),
-        ARM                 (5);
+        ARM                 (5),
+        INTAKE_UNO          (6),
+        INTAKE_DOS          (7);
 
         private final int id;
 
@@ -55,7 +54,7 @@ public class RobotMap {
     }
 
     public static enum Gamepad {
-        DRIVER  (1);
+        DRIVER  (0);
 
         private final int port;
 

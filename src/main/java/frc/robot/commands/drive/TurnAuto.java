@@ -12,11 +12,12 @@ public class TurnAuto implements Command {
     private PIDController pid;
     private double degrees;
     private static final double INTEGRATOR_RANGE = 10.0;
+    private static final double ki = 0.02;
 
     public TurnAuto(Drivetrain drivetrain, double degrees) {
         this.drivetrain = drivetrain;
         this.degrees = degrees;
-        pid = new PIDController(0.007, 0.02, 1);
+        pid = new PIDController(0.007, 0, 1);
     }
 
     @Override
@@ -27,13 +28,8 @@ public class TurnAuto implements Command {
 
     @Override
     public void execute() {
-        SmartDashboard.putNumber("setpoint", pid.getSetpoint());
-        SmartDashboard.putNumber("err", pid.getPositionError());
-        pid.setP(SmartDashboard.getNumber("P", 0.0));
-        pid.setI(Math.abs(pid.getPositionError()) <= INTEGRATOR_RANGE ? SmartDashboard.getNumber("I", 0.0) : 0.0);
-        pid.setD(SmartDashboard.getNumber("D", 0.0));
+        pid.setI(Math.abs(pid.getPositionError()) <= INTEGRATOR_RANGE ? ki : 0.0);
         double power = pid.calculate(drivetrain.getHeading());
-        SmartDashboard.putNumber("power", power);
         drivetrain.arcadeDrive(0.0, power);
     }
 

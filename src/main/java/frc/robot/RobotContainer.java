@@ -24,23 +24,30 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import frc.hid.PS4Controller;
 import frc.hid.XBOXController;
+import frc.robot.commands.OrElseCommand;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
 import frc.robot.commands.drive.FollowTrajectory;
 import frc.robot.commands.drive.TurnAuto;
+import frc.robot.commands.drive.FollowTrajectory.PoseData;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Blinkin;
 import frc.robot.subsystems.Limelight;
+import frc.robot.subsystems.Blinkin.BlinkinColor;
+import frc.robot.subsystems.Limelight.CameraMode;
+import frc.robot.subsystems.Limelight.LEDState;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PIDCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.PerpetualCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
@@ -52,20 +59,19 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
-  // public static PowerDistribution pdp = new PowerDistribution();
   private BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
 
   // The robot's subsystems and commands are defined here...
-  private final XBOXController driver = new XBOXController(RobotMap.Gamepad.DRIVER.port());
+  private final XBOXController driver = new XBOXController(RobotMap.Gamepad.DRIVER.port(), .04);
 
   private final Limelight limelight = new Limelight();
-  // private final LedSubsystem ledSubsystem = new LedSubsystem();
+  private final Blinkin blinkin = new Blinkin(RobotMap.PWM.BLINKIN.port());
 
-  CANSparkMax L2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_LEFT.id(), MotorType.kBrushless);
-  CANSparkMax L1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless);
-  CANSparkMax R2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
-  CANSparkMax R1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless);
-  AHRS navx = new AHRS(SPI.Port.kMXP);
+  private final CANSparkMax L1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless);
+  private final CANSparkMax L2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_LEFT.id(), MotorType.kBrushless);
+  private final CANSparkMax R1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless);
+  private final CANSparkMax R2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
+  private final AHRS navx = new AHRS(SPI.Port.kMXP);
 
   public final Drivetrain drivetrain = new Drivetrain(
     new MotorControllerGroup(
@@ -80,8 +86,10 @@ public class RobotContainer {
   );
 
   private final Intake intake = new Intake(
-    new TalonSRX(RobotMap.CAN.INTAKE_BOTTOM.id()),
-    new TalonSRX(RobotMap.CAN.INTAKE_TOP.id())
+    new TalonSRX(RobotMap.CAN.INTAKE_UNO.id()),
+    new TalonSRX(RobotMap.CAN.INTAKE_DOS.id()),
+    blinkin,
+    limelight
   );
 
   public final Arm arm = new Arm(
@@ -89,19 +97,13 @@ public class RobotContainer {
     new DigitalInput(RobotMap.DIO.ARM_BOTTOM_LIMIT_SWITCH.port())
   );
 
-  private final Blinkin blinkin = new Blinkin(RobotMap.PWM.BLINKIN.port());
-
-  /*private final LedSubsystem ledSubsystem = new LedSubsystem(
-    new Spark(RobotMap.PWM.BLINKIN.port())
-  );*/
-
-  private final ArcadeDrive arcadeDrive = new ArcadeDrive(
+  private final Command arcadeDrive = new ArcadeDrive(
     drivetrain,
     driver.leftStickY::value,
     driver.rightStickX::value
   );
 
-  private final CurvatureDrive curvatureDrive = new CurvatureDrive(
+  private final Command curvatureDrive = new CurvatureDrive(
     drivetrain,
     driver.leftStickY::value,
     driver.rightStickX::value
@@ -119,58 +121,87 @@ public class RobotContainer {
     intake
   );
 
-  private final PIDController
-    pidArmUp = new PIDController(0.015, 0.001, 1.5);
-
-  private final Command armUp = new PIDCommand(
-    pidArmUp,
-    arm::getPosition,
-    () -> 31,
-    power -> arm.setPower(Math.abs(power) < Constants.ARM_MAX_UP ? power : Constants.ARM_MAX_UP * Math.signum(power)),
-    arm
-  );
+  private Command createArmUpCommand() {
+    var pidArmUp = new PIDController(0.015, 0.001, 1.5);
+    pidArmUp.setTolerance(5.0);
+    return new PIDCommand(
+      pidArmUp,
+      arm::getPosition,
+      () -> Arm.ARM_UP,
+      power -> arm.setPower(Math.abs(power) < Constants.ARM_MAX_UP ? power : Constants.ARM_MAX_UP * Math.signum(power)),
+      arm
+    );
+  }
 
   private Command createArmDownCommand() {
     var pidArmDown = new PIDController(0.015, 0.001, 1.5);
-    pidArmDown.setTolerance(3.0);
+    pidArmDown.setTolerance(5.0);
     return new PIDCommand(
       pidArmDown,
       arm::getPosition,
-      () -> 90,
+      () -> Arm.ARM_DOWN,
       power -> {
         if (arm.isDown() && arm.getLimSwitch()) {
-          arm.setPower(.2);
+          arm.setPower(.35);
+          blinkin.addColor(BlinkinColor.INTAKE);
         } else {
           arm.setPower(power);
+          blinkin.removeColor(BlinkinColor.INTAKE);
         }
       },
       arm
     );
   }
 
+  private IdleMode idleMode = IdleMode.kBrake;
+
+  private void setIdleMode(IdleMode m) {
+    L1.setIdleMode(m); 
+    L2.setIdleMode(m);
+    R1.setIdleMode(m);
+    R2.setIdleMode(m);
+  }
+
+  private boolean blinking = false;
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    drivetrain.setDefaultCommand(arcadeDrive); // TODO: decide drive style
+    drivetrain.setDefaultCommand(arcadeDrive);
+    setIdleMode(idleMode);
 
-    pidArmUp.setTolerance(3.0);
+    final float PITCH_TIP_POINT = 15;
+    arm.setDefaultCommand(createArmUpCommand()/*new OrElseCommand(
+      createArmDownCommand(),
+      createArmUpCommand(),
+      () -> navx.getPitch() > PITCH_TIP_POINT
+    )*/);
+    blinkin.setDefaultCommand(new RunCommand(blinkin::display, blinkin));
 
-    /*final float YAW_TIP_POINT = 25;
-    try {
-      arm.setDefaultCommand(new ConditionalCommand(
-        createArmDownCommand(),
-        armUp,
-        () -> Math.abs(navx.getYaw()) > YAW_TIP_POINT
-      ));
-    } catch (NullPointerException e) {
-      // TODO: this is a terrible idea. but why does it happen?
-    }*/
-    arm.setDefaultCommand(armUp);
+    var timer = new Timer();
+    intake.setDefaultCommand(new RunCommand(
+      () -> {
+        if (timer.get() == 0.0 && intake.hasBall() && arm.isDown() && !blinkin.containsColor(BlinkinColor.INTAKE)) {
+          blinkin.addColor(BlinkinColor.INTAKE);
+          limelight.setLEDState(LEDState.BLINK);
+          timer.start();
+        } else if (timer.get() >= 3.0) {
+          blinkin.removeColor(BlinkinColor.INTAKE);
+          limelight.setLEDState(LEDState.OFF);
+          timer.stop();
+          timer.reset();
+        }
+      },
+      intake
+    ));
 
-    IdleMode idleMode = IdleMode.kBrake;
-    L1.setIdleMode(idleMode);
-    L2.setIdleMode(idleMode);
-    R1.setIdleMode(idleMode);
-    R2.setIdleMode(idleMode);
+    limelight.setCameraMode(CameraMode.DRIVER);
+    limelight.setLEDState(LEDState.OFF);
+
+    /*arm.setDefaultCommand(new ParallelCommandGroup(
+      createArmDownCommand().perpetually(),
+      admitCargo.perpetually()
+    ).perpetually());*/
+
     double rampRate = 0.65;
     L1.setClosedLoopRampRate(rampRate);
     L2.setClosedLoopRampRate(rampRate);
@@ -182,7 +213,7 @@ public class RobotContainer {
   }
 
   public Command createAutoCommand() {
-    return new TurnAuto(drivetrain, 90);
+    return new TurnAuto(drivetrain, 90.0);
   }
 
   /**
@@ -194,22 +225,44 @@ public class RobotContainer {
   private void configureButtonBindings() {
     driver.A.whileActiveOnce(getAutonomousCommand());
     driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
+    driver.Y.whenActive(new InstantCommand(
+      () -> {
+        if (idleMode == IdleMode.kBrake) {
+          idleMode = IdleMode.kCoast;
+        } else {
+          idleMode = IdleMode.kBrake;
+        }
+        setIdleMode(idleMode);
+      },
+      drivetrain
+    ));
+    driver.B.whenActive(new InstantCommand(() -> System.out.println(":)")));
 
     // intake
     driver.rightTrigger.whileActiveOnce(admitCargo);
-    driver.rightBumper.whenInactive(ejectCargo.withTimeout(Constants.SHOOTER_TIMEOUT));
-    //blinkin.set(-.97);
+    driver.rightBumper.whenInactive(new ParallelCommandGroup(
+      ejectCargo,
+      new StartEndCommand(
+        () -> blinkin.addColor(BlinkinColor.SHOOT),
+        () -> blinkin.removeColor(BlinkinColor.SHOOT)
+      )
+    ).withTimeout(Constants.SHOOTER_TIMEOUT));
 
     // arm
-    driver.rightTrigger.whileActiveOnce(createArmDownCommand());
-    driver.rightTrigger.whenActive(new InstantCommand(() -> {
-      driver.setRumble(RumbleType.kLeftRumble, .5);
-      driver.setRumble(RumbleType.kRightRumble, .5);
-    }));
-    driver.rightTrigger.whenInactive(new InstantCommand(() -> {
-      driver.setRumble(RumbleType.kLeftRumble, .0);
-      driver.setRumble(RumbleType.kRightRumble, .0);
-    }));
+    driver.rightTrigger
+      .whileActiveOnce(createArmDownCommand())
+      .whenActive(new InstantCommand(
+        () -> {
+          driver.setRumble(RumbleType.kLeftRumble, .5);
+          driver.setRumble(RumbleType.kRightRumble, .5);
+        }
+      ))
+      .whenInactive(new InstantCommand(
+        () -> {
+          driver.setRumble(RumbleType.kLeftRumble, 0);
+          driver.setRumble(RumbleType.kRightRumble, 0);
+        }
+      ));
   }
 
   /**
@@ -218,16 +271,47 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    ArrayList<Pose2d> path = new ArrayList<>();
+    ArrayList<PoseData> path = new ArrayList<>();
     drivetrain.resetOdometry(new Pose2d());
-    path.add(new Pose2d(
-      new Translation2d(17.90, 60.92),
-      new Rotation2d(Math.toRadians(90))
+    /*path.add(new PoseData(
+      new Pose2d(
+        new Translation2d(-10.0, 20.0),
+        new Rotation2d(Math.toRadians(30))
+      ),
+      1.0,
+      1.0,
+      true
+    ));
+    path.add(new PoseData(
+      new Pose2d(
+        new Translation2d(0.0, 40.0),
+        new Rotation2d(Math.toRadians(-30))
+      ),
+      1.0,
+      1.0,
+      false
+    ));
+    path.add(new PoseData(
+      new Pose2d(
+        new Translation2d(17.90, 60.92),
+        new Rotation2d(Math.toRadians(-90))
+      ),
+      1.0,
+      1.0,
+      false
+    ));*/
+    path.add(new PoseData(
+      new Pose2d(
+        new Translation2d(60.0, 20.0),
+        new Rotation2d(Math.toRadians(0))
+      ),
+      .5,
+      1.0,
+      true
     ));
     return new FollowTrajectory(
       drivetrain,
-      path,
-      1.0
+      path
     );
   }
 }

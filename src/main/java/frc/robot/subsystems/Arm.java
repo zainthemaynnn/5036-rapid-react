@@ -14,9 +14,9 @@ public class Arm implements Subsystem {
     private MotorController motor;
     private RelativeEncoder encoder;
     private DigitalInput limitSwitch;
-    private static final int ARM_UP = 31;
-    private static final int ARM_DOWN = 90;
-    private static final double DOWN_RANGE = 2.0;
+    public static final int ARM_UP = 32;
+    public static final int ARM_DOWN = 90;
+    private static final double DOWN_RANGE = 3.0;
 
     public Arm(CANSparkMax motor, DigitalInput limitSwitch) {
         this.motor = motor;
@@ -46,12 +46,16 @@ public class Arm implements Subsystem {
         return limitSwitch.get();
     }
 
+    public void zero() {
+        encoder.setPosition(0);
+    }
+
     public double armTargetFromPercent(double p) {
         return p * (ARM_DOWN - ARM_UP) + ARM_UP;
     }
 
     public void setPower(double power) {
-        power = -(power + getGravityCompensation());// * getVoltageCompensation();
+        power = -(power/* + getGravityCompensation()*/);// * getVoltageCompensation();
         motor.set(power);
     }
 
