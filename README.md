@@ -8,14 +8,16 @@ frc team 5036's computer stuffy stuff for 2022
 3. ~~Autonomous turning PID (gyro)~~
 4. ~~Intake logic~~
 5. \*Conveyor logic
-    conveyor and intake logic will take some time to get it automated and good (sort of, still needs movement compensation)
-6. \*Camera display on Smart Dashboard (sort of, still needs verifiction)
-7. LEDs for driver feedback, programmer like a regular Spark Motor controller and PWM output  
+    conveyor and intake logic will take some time to get it automated and good (sort of, still needs movement compensation) (are we still even doing this)
+6. ~~Camera display on Smart Dashboard~~
+7. ~~LEDs for driver feedback, programmer like a regular Spark Motor controller and PWM output  
     Flash lights when ball is picked up, this is to be detected by detecting a CURRENT spike (momentary increase) on the intake motors  
     We will have to see what baseline current is, then see what the spike is when we get a ball. Might also have to do some simple filtering where we ignore current spike on start up (1s ignore) because that also draws large current  
-    A quick 3 flash when ball is picked up.  
+    A quick 3 flash when ball is picked up.~~
     Also start flashing yellow or something when 30 seconds left
-8. Drive train characterization
-9. Ball dropping logic (if using motor)
-10. pure pursuit
-11. change controllers to dualshock
+8. ~~Drive train characterization~~ that's a nope
+9. ~~Ball dropping logic (if using motor)~~ janky surgical tube thing does the job
+10. ~~pure pursuit~~ looks ok, have to do turn rate and also figure out why it has a seizure. related?
+11. ~~change controllers to dualshock~~
+12. 5 ball auto yessir yessir
+13. ~~anti tip~~
