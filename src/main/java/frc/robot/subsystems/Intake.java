@@ -16,10 +16,6 @@ public class Intake implements Subsystem {
     private Blinkin blinkin;
     private Limelight limelight;
 
-    private double velocityCompensated(double power) {
-        return power;
-    }
-
     public Intake(TalonSRX uno, TalonSRX dos, Blinkin blinkin, Limelight limelight) {
         this.dos = uno;
         this.uno = dos;
@@ -30,8 +26,8 @@ public class Intake implements Subsystem {
     }
 
     public void runPercent(double p) {
-        uno.set(ControlMode.PercentOutput, velocityCompensated(p * Constants.INTAKE_POWER));
-        dos.set(ControlMode.PercentOutput, velocityCompensated(p * Constants.INTAKE_POWER));
+        uno.set(ControlMode.PercentOutput, p);
+        dos.set(ControlMode.PercentOutput, p);
     }
 
     public void stop() {

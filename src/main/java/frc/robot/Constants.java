@@ -24,15 +24,14 @@ public final class Constants {
     public static final double MAX_VELOCITY = Units.feetToMeters(12.98);
     public static final double MAX_ACCELERATION = 2.0; // TODO: this is an estimate. get the actual one once the robot is complete.
     public static final double DRIVE_MAX_VOLTAGE = 10.0; // ten's a good number, right?
-    public static final double INTAKE_POWER = 1.0;
+    public static final double INTAKE_POWER = .8;
     public static final double ARM_MAX_UP = .4;
     public static final DoubleUnaryOperator JOYSTICK_TRANSFORM = v -> {
         // TODO: find an optimal filter. it's on a polynomial right now.
         // https://www.desmos.com/calculator/lcucznkyiq
-        /*final double DEGREE = 2.0;
-        final double DEADZONE = .05;
-        return Math.abs(v) > DEADZONE ? Math.pow(Math.abs(v), DEGREE) * (v > 0 ? 1 : -1) : 0;*/
-        return v;
+        final double DEGREE = 3.0;
+        final double DEADZONE = .02;
+        return Math.abs(v) > DEADZONE ? Math.pow(Math.abs(v), DEGREE) * Math.signum(v) : 0;
     };
     public static final double ARM_TARGET_ANGLE = -22.33321762084961;
     public static final double ARM_LENGTH = Units.feetToMeters(4.0);

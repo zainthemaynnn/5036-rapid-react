@@ -69,7 +69,9 @@ public class FollowTrajectory implements Command {
     }
 
     private boolean atSetpoint() {
-        return Math.abs(turnController.getPositionError()) <= 5.0 && Math.abs(driveController.getPositionError()) <= 2.5; 
+        return
+            Math.abs(params.pose.getRotation().getDegrees() - drivetrain.getPose().getRotation().getDegrees()) <= 2.0 &&
+            Math.abs(driveController.getPositionError()) <= 0.5; 
     }
 
     @Override
@@ -97,11 +99,11 @@ public class FollowTrajectory implements Command {
             err = new Pose2d(-err.getX(), err.getY(), err.getRotation());
         }
 
-        driveController.setSetpoint(0);
+        driveController.setSetpoint(err.getY());
         turnController.setSetpoint(next.getRotation().getDegrees() - clamp(err.getX() * params.turnRate, -MAX_TURN, MAX_TURN));
 
         double absErr = clamp(Math.abs(turnController.getPositionError()), 0.0, 90.0);
-        throttle = driveController.calculate(-err.getY()) * (-absErr / 90.0 + 1);
+        throttle = driveController.calculate(0.0);// * (-absErr / 90.0 + 1);
         wheel = -turnController.calculate(drivetrain.getPose().getRotation().getDegrees());
         drivetrain.arcadeDrive(throttle, wheel);
 

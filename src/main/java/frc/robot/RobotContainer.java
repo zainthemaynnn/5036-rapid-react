@@ -92,10 +92,10 @@ public class RobotContainer {
     limelight
   );
 
-  public final Arm arm = new Arm(
+  /*public final Arm arm = new Arm(
     new CANSparkMax(RobotMap.CAN.ARM.id(), MotorType.kBrushless),
     new DigitalInput(RobotMap.DIO.ARM_BOTTOM_LIMIT_SWITCH.port())
-  );
+  );*/
 
   private final Command arcadeDrive = new ArcadeDrive(
     drivetrain,
@@ -110,7 +110,7 @@ public class RobotContainer {
   );
 
   private final Command admitCargo = new StartEndCommand(
-    () -> intake.runPercent(.75),
+    () -> intake.runPercent(.6),
     () -> intake.stop(),
     intake
   );
@@ -121,37 +121,11 @@ public class RobotContainer {
     intake
   );
 
-  private Command createArmUpCommand() {
-    var pidArmUp = new PIDController(0.015, 0.001, 1.5);
-    pidArmUp.setTolerance(5.0);
-    return new PIDCommand(
-      pidArmUp,
-      arm::getPosition,
-      () -> Arm.ARM_UP,
-      power -> arm.setPower(Math.abs(power) < Constants.ARM_MAX_UP ? power : Constants.ARM_MAX_UP * Math.signum(power)),
-      arm
-    );
-  }
-
-  private Command createArmDownCommand() {
-    var pidArmDown = new PIDController(0.015, 0.001, 1.5);
-    pidArmDown.setTolerance(5.0);
-    return new PIDCommand(
-      pidArmDown,
-      arm::getPosition,
-      () -> Arm.ARM_DOWN,
-      power -> {
-        if (arm.isDown() && arm.getLimSwitch()) {
-          arm.setPower(.35);
-          blinkin.addColor(BlinkinColor.INTAKE);
-        } else {
-          arm.setPower(power);
-          blinkin.removeColor(BlinkinColor.INTAKE);
-        }
-      },
-      arm
-    );
-  }
+  private final Command ejectCargoShort = new StartEndCommand(
+    () -> intake.runPercent(-1),
+    () -> intake.stop(),
+    intake
+  );
 
   private IdleMode idleMode = IdleMode.kBrake;
 
@@ -162,25 +136,43 @@ public class RobotContainer {
     R2.setIdleMode(m);
   }
 
-  private boolean blinking = false;
+  private double last = 0.0;
+  private boolean isup = true;
+  private boolean stopped = true;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     drivetrain.setDefaultCommand(arcadeDrive);
     setIdleMode(idleMode);
 
-    final float PITCH_TIP_POINT = 15;
-    arm.setDefaultCommand(createArmUpCommand()/*new OrElseCommand(
+    /*arm.setDefaultCommand(new RunCommand(
+      () -> {
+        if (!arm.isUp()) {
+          arm.setPower(-.6);
+          intake.runPercent(.6);
+          stopped = false;
+        } else {
+          arm.setPower(-.2);
+          if (!stopped) {
+            intake.runPercent(0);
+            stopped = true;
+          }
+        }
+      },
+      arm
+    ));*/
+  
+    /*arm.setDefaultCommand(new OrElseCommand(
       createArmDownCommand(),
       createArmUpCommand(),
-      () -> navx.getPitch() > PITCH_TIP_POINT
-    )*/);
+      driver.rightTrigger::get
+    ));*/
     blinkin.setDefaultCommand(new RunCommand(blinkin::display, blinkin));
 
     var timer = new Timer();
     intake.setDefaultCommand(new RunCommand(
       () -> {
-        if (timer.get() == 0.0 && intake.hasBall() && arm.isDown() && !blinkin.containsColor(BlinkinColor.INTAKE)) {
+        if (timer.get() == 0.0 && intake.hasBall() && /*arm.isDown() &&*/ !blinkin.containsColor(BlinkinColor.INTAKE)) {
           blinkin.addColor(BlinkinColor.INTAKE);
           limelight.setLEDState(LEDState.BLINK);
           timer.start();
@@ -224,7 +216,7 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     driver.A.whileActiveOnce(getAutonomousCommand());
-    driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
+    //driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
     driver.Y.whenActive(new InstantCommand(
       () -> {
         if (idleMode == IdleMode.kBrake) {
@@ -236,7 +228,6 @@ public class RobotContainer {
       },
       drivetrain
     ));
-    driver.B.whenActive(new InstantCommand(() -> System.out.println(":)")));
 
     // intake
     driver.rightTrigger.whileActiveOnce(admitCargo);
@@ -248,10 +239,27 @@ public class RobotContainer {
       )
     ).withTimeout(Constants.SHOOTER_TIMEOUT));
 
+    driver.leftBumper.whenInactive(new ParallelCommandGroup(
+      ejectCargoShort
+      /*new StartEndCommand(
+        () -> blinkin.addColor(BlinkinColor.SHOOT),
+        () -> blinkin.removeColor(BlinkinColor.SHOOT)
+      )*/
+    ).withTimeout(.1));
+
     // arm
-    driver.rightTrigger
-      .whileActiveOnce(createArmDownCommand())
-      .whenActive(new InstantCommand(
+    //driver.rightTrigger
+      /*.whileActiveOnce(new RunCommand(
+        () -> {
+          if (!arm.isDown()) {
+            arm.setPower(.6);
+          } else {
+            arm.setPower(.2);
+          }
+        },
+        arm
+      ))*/
+      /*.whenActive(new InstantCommand(
         () -> {
           driver.setRumble(RumbleType.kLeftRumble, .5);
           driver.setRumble(RumbleType.kRightRumble, .5);
@@ -262,7 +270,7 @@ public class RobotContainer {
           driver.setRumble(RumbleType.kLeftRumble, 0);
           driver.setRumble(RumbleType.kRightRumble, 0);
         }
-      ));
+      ))*///;
   }
 
   /**
@@ -302,11 +310,11 @@ public class RobotContainer {
     ));*/
     path.add(new PoseData(
       new Pose2d(
-        new Translation2d(60.0, 20.0),
-        new Rotation2d(Math.toRadians(0))
+        new Translation2d(40.0, 100.0),
+        new Rotation2d(Math.toRadians(-90))
       ),
-      .5,
       1.0,
+      0.1,
       true
     ));
     return new FollowTrajectory(
