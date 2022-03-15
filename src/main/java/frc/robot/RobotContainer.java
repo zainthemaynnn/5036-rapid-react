@@ -5,9 +5,10 @@
 package frc.robot;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -22,16 +23,22 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import frc.commands.OrElseCommand;
 import frc.hid.PS4Controller;
 import frc.hid.XBOXController;
-import frc.robot.commands.OrElseCommand;
+import frc.robot.commands.auto.FiveBlue;
+import frc.robot.commands.auto.TwoBlue;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
+import frc.robot.commands.drive.DriveToPoint;
 import frc.robot.commands.drive.FollowTrajectory;
 import frc.robot.commands.drive.TurnAuto;
 import frc.robot.commands.drive.FollowTrajectory.PoseData;
@@ -39,6 +46,7 @@ import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Blinkin;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Limelight;
 import frc.robot.subsystems.Blinkin.BlinkinColor;
 import frc.robot.subsystems.Limelight.CameraMode;
@@ -50,7 +58,9 @@ import edu.wpi.first.wpilibj2.command.PIDCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.PerpetualCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -59,7 +69,7 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
-  private BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
+  private final BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
 
   // The robot's subsystems and commands are defined here...
   private final XBOXController driver = new XBOXController(RobotMap.Gamepad.DRIVER.port(), .04);
@@ -67,35 +77,35 @@ public class RobotContainer {
   private final Limelight limelight = new Limelight();
   private final Blinkin blinkin = new Blinkin(RobotMap.PWM.BLINKIN.port());
 
-  private final CANSparkMax L1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless);
-  private final CANSparkMax L2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_LEFT.id(), MotorType.kBrushless);
-  private final CANSparkMax R1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless);
-  private final CANSparkMax R2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
+  private final CANSparkMax
+    l1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_LEFT.id(), MotorType.kBrushless),
+    l2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_LEFT.id(), MotorType.kBrushless),
+    r1 = new CANSparkMax(RobotMap.CAN.BACK_MOTOR_RIGHT.id(), MotorType.kBrushless),
+    r2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
   private final AHRS navx = new AHRS(SPI.Port.kMXP);
 
   public final Drivetrain drivetrain = new Drivetrain(
-    new MotorControllerGroup(
-      L1, L2
-    ),
-    new MotorControllerGroup(
-      R1, R2
-    ),
-    L1.getEncoder(),
-    R1.getEncoder(),
+    new MotorControllerGroup(l1, l2),
+    new MotorControllerGroup(r1, r2),
+    l1.getEncoder(),
+    r1.getEncoder(),
     navx
   );
 
   private final Intake intake = new Intake(
     new TalonSRX(RobotMap.CAN.INTAKE_UNO.id()),
-    new TalonSRX(RobotMap.CAN.INTAKE_DOS.id()),
-    blinkin,
-    limelight
+    new TalonSRX(RobotMap.CAN.INTAKE_DOS.id())
   );
 
   /*public final Arm arm = new Arm(
     new CANSparkMax(RobotMap.CAN.ARM.id(), MotorType.kBrushless),
     new DigitalInput(RobotMap.DIO.ARM_BOTTOM_LIMIT_SWITCH.port())
   );*/
+
+  private final Climber climber = new Climber(
+    new VictorSPX(RobotMap.CAN.CLIMBER_UNO.id()),
+    new VictorSPX(RobotMap.CAN.CLIMBER_DOS.id())
+  );
 
   private final Command arcadeDrive = new ArcadeDrive(
     drivetrain,
@@ -106,19 +116,23 @@ public class RobotContainer {
   private final Command curvatureDrive = new CurvatureDrive(
     drivetrain,
     driver.leftStickY::value,
-    driver.rightStickX::value
+    driver.rightStickX::value,
+    driver.leftTrigger::get
   );
 
   private final Command admitCargo = new StartEndCommand(
-    () -> intake.runPercent(.6),
+    () -> intake.runPercent(.70),
     () -> intake.stop(),
     intake
   );
 
-  private final Command ejectCargo = new StartEndCommand(
-    () -> intake.runPercent(-1),
-    () -> intake.stop(),
-    intake
+  private final Command ejectCargo = new SequentialCommandGroup(
+    new RunCommand(() -> intake.runPercent(1)).withTimeout(0.1),
+    new StartEndCommand(
+      () -> intake.runPercent(-1),
+      () -> intake.stop(),
+      intake
+    )
   );
 
   private final Command ejectCargoShort = new StartEndCommand(
@@ -128,20 +142,19 @@ public class RobotContainer {
   );
 
   private IdleMode idleMode = IdleMode.kBrake;
+  private final ShuffleboardTab mainTab = Shuffleboard.getTab("Main");
+  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   private void setIdleMode(IdleMode m) {
-    L1.setIdleMode(m); 
-    L2.setIdleMode(m);
-    R1.setIdleMode(m);
-    R2.setIdleMode(m);
+    l1.setIdleMode(m); 
+    l2.setIdleMode(m);
+    r1.setIdleMode(m);
+    r2.setIdleMode(m);
   }
-
-  private double last = 0.0;
-  private boolean isup = true;
-  private boolean stopped = true;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    DriveToPoint.init(drivetrain);
     drivetrain.setDefaultCommand(arcadeDrive);
     setIdleMode(idleMode);
 
@@ -172,7 +185,7 @@ public class RobotContainer {
     var timer = new Timer();
     intake.setDefaultCommand(new RunCommand(
       () -> {
-        if (timer.get() == 0.0 && intake.hasBall() && /*arm.isDown() &&*/ !blinkin.containsColor(BlinkinColor.INTAKE)) {
+        if (timer.get() == 0.0 && intake.hasBall() && !blinkin.containsColor(BlinkinColor.INTAKE)) {
           blinkin.addColor(BlinkinColor.INTAKE);
           limelight.setLEDState(LEDState.BLINK);
           timer.start();
@@ -195,17 +208,20 @@ public class RobotContainer {
     ).perpetually());*/
 
     double rampRate = 0.65;
-    L1.setClosedLoopRampRate(rampRate);
-    L2.setClosedLoopRampRate(rampRate);
-    R1.setClosedLoopRampRate(rampRate);
-    R2.setClosedLoopRampRate(rampRate);
+    l1.setClosedLoopRampRate(rampRate);
+    l2.setClosedLoopRampRate(rampRate);
+    r1.setClosedLoopRampRate(rampRate);
+    r2.setClosedLoopRampRate(rampRate);
+
+    /*autoChooser.addOption("2 blue", new SequentialCommandGroup(
+      new WaitCommand(3.0),
+      new TwoBlue(drivetrain)
+    ));*/
+    //autoChooser.addOption("5 blue", new FiveBlue(drivetrain));
+    mainTab.add("Auto chooser", autoChooser);
 
     // Configure the button bindings
     configureButtonBindings();
-  }
-
-  public Command createAutoCommand() {
-    return new TurnAuto(drivetrain, 90.0);
   }
 
   /**
@@ -215,8 +231,8 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    driver.A.whileActiveOnce(getAutonomousCommand());
-    //driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
+    driver.A.whileActiveOnce(new TwoBlue(drivetrain));
+    driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
     driver.Y.whenActive(new InstantCommand(
       () -> {
         if (idleMode == IdleMode.kBrake) {
@@ -239,13 +255,17 @@ public class RobotContainer {
       )
     ).withTimeout(Constants.SHOOTER_TIMEOUT));
 
-    driver.leftBumper.whenInactive(new ParallelCommandGroup(
-      ejectCargoShort
-      /*new StartEndCommand(
-        () -> blinkin.addColor(BlinkinColor.SHOOT),
-        () -> blinkin.removeColor(BlinkinColor.SHOOT)
-      )*/
-    ).withTimeout(.1));
+    driver.leftTrigger.whileActiveOnce(new StartEndCommand(
+      () -> climber.extend(),
+      () -> climber.stop(),
+      climber
+    ));
+
+    driver.leftBumper.whileActiveOnce(new StartEndCommand(
+      () -> climber.retract(),
+      () -> climber.stop(),
+      climber
+    ));
 
     // arm
     //driver.rightTrigger
@@ -279,47 +299,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    ArrayList<PoseData> path = new ArrayList<>();
-    drivetrain.resetOdometry(new Pose2d());
-    /*path.add(new PoseData(
-      new Pose2d(
-        new Translation2d(-10.0, 20.0),
-        new Rotation2d(Math.toRadians(30))
-      ),
-      1.0,
-      1.0,
-      true
-    ));
-    path.add(new PoseData(
-      new Pose2d(
-        new Translation2d(0.0, 40.0),
-        new Rotation2d(Math.toRadians(-30))
-      ),
-      1.0,
-      1.0,
-      false
-    ));
-    path.add(new PoseData(
-      new Pose2d(
-        new Translation2d(17.90, 60.92),
-        new Rotation2d(Math.toRadians(-90))
-      ),
-      1.0,
-      1.0,
-      false
-    ));*/
-    path.add(new PoseData(
-      new Pose2d(
-        new Translation2d(40.0, 100.0),
-        new Rotation2d(Math.toRadians(-90))
-      ),
-      1.0,
-      0.1,
-      true
-    ));
-    return new FollowTrajectory(
-      drivetrain,
-      path
-    );
+    return autoChooser.getSelected();
   }
 }

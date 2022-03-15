@@ -18,30 +18,18 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMax.IdleMode;
 
 import frc.robot.Constants;
-import frc.robot.Dashboard;
+import frc.ui.Dashboard;
+import frc.ui.SendableChassisSpeeds;
 
-public class Drivetrain implements Subsystem {
-    // stupid thing isn't sendable. I made the stupid thing sendable.
-    private class SendableChassisSpeeds extends ChassisSpeeds implements Sendable {
-        public SendableChassisSpeeds(ChassisSpeeds speeds) {
-            super(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
-        }
-
-        public void initSendable(SendableBuilder builder) {
-            builder.setSmartDashboardType("ChassisSpeeds");
-            builder.addDoubleProperty("vX", () -> vxMetersPerSecond, null);
-            builder.addDoubleProperty("vY", () -> vyMetersPerSecond, null);
-            builder.addDoubleProperty("vR", () -> omegaRadiansPerSecond, null);
-            builder.setActuator(true);
-        }
-    }
-
+public class Drivetrain implements Subsystem, AutoCloseable {
     // motors/sensors
     private MotorControllerGroup motorL, motorR;
     private RelativeEncoder encoderL, encoderR;
     private AHRS gyro;
+    private IdleMode idleMode;
 
     // odometry
     private SimpleMotorFeedforward feedforward;
@@ -88,6 +76,8 @@ public class Drivetrain implements Subsystem {
             .add("Right motor", motorR)
             .add("Gyro", gyro)
             .add("Velocity", chassisSpeeds);
+
+        idleMode = IdleMode.kBrake;
     }
 
     private double clamp(double n, double min, double max) {
@@ -101,10 +91,9 @@ public class Drivetrain implements Subsystem {
     }
 
     // https://github.com/Team254/FRC-2016-Public/blob/master/src/com/team254/frc2016/CheesyDriveHelper.java
-    public void curvatureDrive(double throttle, double wheel) {
+    public void curvatureDrive(double throttle, double wheel, boolean isQuickTurn) {
         double overPower;
         double angularPower;
-        boolean isQuickTurn = stopped(); // TODO: is this right? might want to put a threshold > 0.
 
         if (isQuickTurn) {
             if (Math.abs(throttle) < 0.2) {
@@ -145,18 +134,9 @@ public class Drivetrain implements Subsystem {
         motorR.set(rightPwm);
     }
 
-    public void tankDriveVolts(double voltageL, double voltageR) {
-        motorL.setVoltage(voltageL);
-        motorR.setVoltage(voltageR);
-    }
-
     public void stop() {
-        motorL.set(0);
-        motorR.set(0);
-    }
-
-    public boolean stopped() {
-        return motorL.get() == 0 && motorR.get() == 0;
+        motorL.stopMotor();
+        motorR.stopMotor();
     }
 
     public double getHeading() {
@@ -190,6 +170,7 @@ public class Drivetrain implements Subsystem {
     public void updateOdometry() {
         wheelSpeeds = new DifferentialDriveWheelSpeeds(encoderL.getVelocity(), encoderR.getVelocity());
         chassisSpeeds = new SendableChassisSpeeds(kinematics.toChassisSpeeds(wheelSpeeds));
+        // please don't ask, cause I don't know
         Pose2d poseMeters = odometry.update(
             new Rotation2d(Math.toRadians(-gyro.getAngle()+90)),
             Units.inchesToMeters(getEncL()),
@@ -207,5 +188,12 @@ public class Drivetrain implements Subsystem {
         encoderL.setPosition(0);
         encoderR.setPosition(0);
         odometry.resetPosition(newPose, gyro.getRotation2d());
+    }
+
+    @Override
+    public void close() {
+        motorL.close();
+        motorR.close();
+        gyro.close();
     }
 }

@@ -40,7 +40,9 @@ public class RobotMap {
         FRONT_MOTOR_RIGHT   (4),
         ARM                 (5),
         INTAKE_UNO          (6),
-        INTAKE_DOS          (7);
+        INTAKE_DOS          (7),
+        CLIMBER_UNO         (8),
+        CLIMBER_DOS         (9);
 
         private final int id;
 

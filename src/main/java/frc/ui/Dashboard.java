@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.ui;
 
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableRegistry;
