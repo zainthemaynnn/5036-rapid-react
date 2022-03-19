@@ -69,6 +69,8 @@ public class FollowTrajectory implements Command {
     }
 
     private boolean atSetpoint() {
+        System.out.println(driveController.getPositionError());
+        System.out.println(Math.abs(params.pose.getRotation().getDegrees() - drivetrain.getPose().getRotation().getDegrees()));
         return
             Math.abs(params.pose.getRotation().getDegrees() - drivetrain.getPose().getRotation().getDegrees()) <= 2.0 &&
             Math.abs(driveController.getPositionError()) <= 0.5; 

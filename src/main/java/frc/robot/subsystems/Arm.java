@@ -14,10 +14,11 @@ public class Arm implements Subsystem {
     private MotorController motor;
     private RelativeEncoder encoder;
     private DigitalInput limitSwitch;
+    private boolean overridden = false;
     public static final int ARM_UP = 32;
     public static final int ARM_DOWN = 90;
     private static final double DOWN_RANGE = 20.0;
-    private static final double UP_RANGE = 8.0;
+    private static final double UP_RANGE = 5.0;
 
     public Arm(CANSparkMax motor, DigitalInput limitSwitch) {
         this.motor = motor;
@@ -40,15 +41,11 @@ public class Arm implements Subsystem {
     }
 
     public boolean isDown() {
-        return Math.abs(getPosition() - ARM_DOWN) < DOWN_RANGE;
+        return !limitSwitch.get();
     }
 
     public boolean isUp() {
         return Math.abs(getPosition() - ARM_UP) < UP_RANGE;
-    }
-
-    public boolean getLimSwitch() {
-        return limitSwitch.get();
     }
 
     public void zero() {
@@ -62,6 +59,14 @@ public class Arm implements Subsystem {
     public void setPower(double power) {
         power = -(power/* + getGravityCompensation()*/);// * getVoltageCompensation();
         motor.set(power);
+    }
+
+    public void override(boolean on) {
+        overridden = on;
+    }
+
+    public boolean overriden() {
+        return overridden;
     }
 
     public void updateDashboard() {

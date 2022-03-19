@@ -29,12 +29,13 @@ public class DriveToPoint implements Command {
   private static final double Y_ERR = 1.0;
   private static final double R_ERR = 5.0;
   private PIDController driveController, turnController;
-  private static Pose2d target = new Pose2d(), err = new Pose2d();
-  private double turnRate;
+  private Pose2d target = new Pose2d();
+  private static Pose2d err = new Pose2d();
+  private static ShuffleboardTab tab = Shuffleboard.getTab("DriveToPoint");
+  private double turnRate, maxSpeed;
 
   public static void init(Drivetrain drivetrain) {
     DriveToPoint.drivetrain = drivetrain;
-    var tab = Shuffleboard.getTab("DriveToPoint");
     tab.addNumber("X", () -> drivetrain.getPose().getX());
     tab.addNumber("Y", () -> drivetrain.getPose().getY());
     tab.addNumber("R", () -> drivetrain.getPose().getRotation().getDegrees());
@@ -43,9 +44,10 @@ public class DriveToPoint implements Command {
     tab.addNumber("dR", () -> err.getRotation().getDegrees());
   }
 
-  public DriveToPoint(Drivetrain drivetrain, Pose2d target, double turnRate) {
-    DriveToPoint.target = target;
+  public DriveToPoint(Drivetrain drivetrain, Pose2d target, double turnRate, double maxSpeed) {
+    this.target = target;
     this.turnRate = turnRate;
+    this.maxSpeed = maxSpeed;
     driveController = new PIDController(0.015, 0, 0.03);
     turnController = new PIDController(0.008, /*0.0*/0.02, 10);
   }
@@ -70,8 +72,9 @@ public class DriveToPoint implements Command {
 
     driveController.setSetpoint(err.getY());
     turnController.setSetpoint(err.getRotation().getDegrees() - clamp(err.getX() * turnRate, -90.0, 90.0));
+    System.out.println(turnController.getSetpoint());
     double absErr = clamp(Math.abs(turnController.getPositionError()), 0.0, 90.0);
-    double throttle = driveController.calculate(0.0) * (-absErr / 90.0 + 1);
+    double throttle = clamp(driveController.calculate(0.0) * (-absErr / 90.0 + 1), 0, maxSpeed);
     double wheel = -turnController.calculate(0.0);
     drivetrain.arcadeDrive(throttle, wheel);
   }
@@ -86,8 +89,7 @@ public class DriveToPoint implements Command {
 
   @Override
   public boolean isFinished() {
-    System.out.println(err.getRotation().getDegrees());
-    return Math.abs(err.getRotation().getDegrees()) < R_ERR && Math.abs(err.getY()) < Y_ERR;
+    return Math.abs(err.getY()) < Y_ERR;
   }
 
   @Override

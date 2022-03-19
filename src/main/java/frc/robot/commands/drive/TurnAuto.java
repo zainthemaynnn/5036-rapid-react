@@ -17,13 +17,16 @@ public class TurnAuto implements Command {
     public TurnAuto(Drivetrain drivetrain, double degrees) {
         this.drivetrain = drivetrain;
         this.degrees = degrees;
-        pid = new PIDController(0.007, 0, 1);
+        pid = new PIDController(0.007, 0, 10);
+        pid.setTolerance(1.0, 0.01);
     }
 
     @Override
     public void initialize() {
+        System.out.println(drivetrain.getHeading());
         pid.reset();
-        pid.setSetpoint(drivetrain.getHeading() + degrees);
+        System.out.println(degrees);
+        pid.setSetpoint(degrees);
     }
 
     @Override
@@ -35,6 +38,7 @@ public class TurnAuto implements Command {
 
     @Override
     public void end(boolean interrupted) {
+        System.out.println(drivetrain.getHeading());
         drivetrain.stop();
     }
 

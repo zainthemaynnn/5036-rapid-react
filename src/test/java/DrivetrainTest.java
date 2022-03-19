@@ -24,8 +24,7 @@ public class DrivetrainTest {
             r2 = new CANSparkMax(RobotMap.CAN.FRONT_MOTOR_RIGHT.id(), MotorType.kBrushless);
 
         drivetrain = new Drivetrain(
-            new MotorControllerGroup(l1, l2),
-            new MotorControllerGroup(r1, r2),
+            l1, l2, r1, r2,
             l1.getEncoder(),
             r1.getEncoder(),
             new AHRS(SPI.Port.kMXP)

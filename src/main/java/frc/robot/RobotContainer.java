@@ -70,6 +70,7 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
  */
 public class RobotContainer {
   private final BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
+  //private final PowerDistribution pdp = new PowerDistribution();
 
   // The robot's subsystems and commands are defined here...
   private final XBOXController driver = new XBOXController(RobotMap.Gamepad.DRIVER.port(), .04);
@@ -85,8 +86,7 @@ public class RobotContainer {
   private final AHRS navx = new AHRS(SPI.Port.kMXP);
 
   public final Drivetrain drivetrain = new Drivetrain(
-    new MotorControllerGroup(l1, l2),
-    new MotorControllerGroup(r1, r2),
+    l1, l2, r1, r2,
     l1.getEncoder(),
     r1.getEncoder(),
     navx
@@ -97,10 +97,10 @@ public class RobotContainer {
     new TalonSRX(RobotMap.CAN.INTAKE_DOS.id())
   );
 
-  /*public final Arm arm = new Arm(
+  public final Arm arm = new Arm(
     new CANSparkMax(RobotMap.CAN.ARM.id(), MotorType.kBrushless),
     new DigitalInput(RobotMap.DIO.ARM_BOTTOM_LIMIT_SWITCH.port())
-  );*/
+  );
 
   private final Climber climber = new Climber(
     new VictorSPX(RobotMap.CAN.CLIMBER_UNO.id()),
@@ -135,57 +135,53 @@ public class RobotContainer {
     )
   );
 
-  private final Command ejectCargoShort = new StartEndCommand(
-    () -> intake.runPercent(-1),
-    () -> intake.stop(),
-    intake
-  );
-
   private IdleMode idleMode = IdleMode.kBrake;
   private final ShuffleboardTab mainTab = Shuffleboard.getTab("Main");
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
-  private void setIdleMode(IdleMode m) {
+  public void setIdleMode(IdleMode m) {
     l1.setIdleMode(m); 
     l2.setIdleMode(m);
     r1.setIdleMode(m);
     r2.setIdleMode(m);
   }
 
+  private boolean stopped = true;
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     DriveToPoint.init(drivetrain);
     drivetrain.setDefaultCommand(arcadeDrive);
-    setIdleMode(idleMode);
 
-    /*arm.setDefaultCommand(new RunCommand(
+    arm.setDefaultCommand(new RunCommand(
       () -> {
-        if (!arm.isUp()) {
-          arm.setPower(-.6);
-          intake.runPercent(.6);
-          stopped = false;
+        if (!arm.overriden()) {
+          if (!arm.isUp()) {
+            arm.setPower(-.7);
+            stopped = false;
+          } else {
+            arm.setPower(-.06);
+            if (!stopped) {
+              stopped = true;
+            }
+          }
         } else {
-          arm.setPower(-.2);
-          if (!stopped) {
-            intake.runPercent(0);
-            stopped = true;
+          if (!arm.isDown()) {
+            arm.setPower(.6);
+          } else {
+            arm.setPower(.06);
           }
         }
       },
       arm
-    ));*/
-  
-    /*arm.setDefaultCommand(new OrElseCommand(
-      createArmDownCommand(),
-      createArmUpCommand(),
-      driver.rightTrigger::get
-    ));*/
+    ));
+
     blinkin.setDefaultCommand(new RunCommand(blinkin::display, blinkin));
 
     var timer = new Timer();
     intake.setDefaultCommand(new RunCommand(
       () -> {
-        if (timer.get() == 0.0 && intake.hasBall() && !blinkin.containsColor(BlinkinColor.INTAKE)) {
+        if (intake.hasBall() && timer.get() == 0.0 && !blinkin.containsColor(BlinkinColor.INTAKE)) {
           blinkin.addColor(BlinkinColor.INTAKE);
           limelight.setLEDState(LEDState.BLINK);
           timer.start();
@@ -208,17 +204,17 @@ public class RobotContainer {
     ).perpetually());*/
 
     double rampRate = 0.65;
-    l1.setClosedLoopRampRate(rampRate);
-    l2.setClosedLoopRampRate(rampRate);
-    r1.setClosedLoopRampRate(rampRate);
-    r2.setClosedLoopRampRate(rampRate);
+    l1.setOpenLoopRampRate(rampRate);
+    l2.setOpenLoopRampRate(rampRate);
+    r1.setOpenLoopRampRate(rampRate);
+    r2.setOpenLoopRampRate(rampRate);
 
-    /*autoChooser.addOption("2 blue", new SequentialCommandGroup(
-      new WaitCommand(3.0),
-      new TwoBlue(drivetrain)
-    ));*/
-    //autoChooser.addOption("5 blue", new FiveBlue(drivetrain));
     mainTab.add("Auto chooser", autoChooser);
+    autoChooser.addOption("2 blue", new SequentialCommandGroup(
+      new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d())),
+      new TwoBlue(drivetrain, arm, intake)
+    ));
+    //autoChooser.addOption("5 blue", new FiveBlue(drivetrain));
 
     // Configure the button bindings
     configureButtonBindings();
@@ -231,7 +227,7 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    driver.A.whileActiveOnce(new TwoBlue(drivetrain));
+    driver.A.whileActiveOnce(new TwoBlue(drivetrain, arm, intake));
     driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
     driver.Y.whenActive(new InstantCommand(
       () -> {
@@ -256,29 +252,34 @@ public class RobotContainer {
     ).withTimeout(Constants.SHOOTER_TIMEOUT));
 
     driver.leftTrigger.whileActiveOnce(new StartEndCommand(
-      () -> climber.extend(),
-      () -> climber.stop(),
-      climber
+      () -> {
+        arm.override(true);
+        climber.extend();
+      },
+      climber::stop,
+      climber,
+      arm
     ));
 
     driver.leftBumper.whileActiveOnce(new StartEndCommand(
-      () -> climber.retract(),
-      () -> climber.stop(),
+      climber::retract,
+      climber::stop,
       climber
     ));
 
     // arm
-    //driver.rightTrigger
-      /*.whileActiveOnce(new RunCommand(
+    driver.rightTrigger
+      .whileActiveOnce(new RunCommand(
         () -> {
+          arm.override(false);
           if (!arm.isDown()) {
-            arm.setPower(.6);
+            arm.setPower(.60);
           } else {
-            arm.setPower(.2);
+            arm.setPower(.06);
           }
         },
         arm
-      ))*/
+      ))
       /*.whenActive(new InstantCommand(
         () -> {
           driver.setRumble(RumbleType.kLeftRumble, .5);
@@ -290,7 +291,7 @@ public class RobotContainer {
           driver.setRumble(RumbleType.kLeftRumble, 0);
           driver.setRumble(RumbleType.kRightRumble, 0);
         }
-      ))*///;
+      ))*/;
   }
 
   /**
@@ -299,6 +300,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    drivetrain.resetOdometry(new Pose2d());
+    return new TwoBlue(drivetrain, arm, intake).withTimeout(15.0);
   }
 }

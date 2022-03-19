@@ -16,20 +16,21 @@ public class DriveAuto implements Command {
         this.drivetrain = drivetrain;
         this.distance = distance;
         driveController = new PIDController(0.015, 0, 0.03);
-        turnController = new PIDController(0.008, 0, 10);
+        driveController.setTolerance(1.5, .10);
+        turnController = new PIDController(0.007, 0, 10);
+        turnController.setTolerance(2.0);
     }
 
     @Override
     public void initialize() {
         driveController.reset();
-        driveController.setSetpoint(drivetrain.getEncAvg() - distance);
+        driveController.setSetpoint(drivetrain.getEncAvg() + distance);
         turnController.reset();
         turnController.setSetpoint(drivetrain.getHeading());
     }
 
     @Override
     public void execute() {
-        driveController.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
         drivetrain.arcadeDrive(
             driveController.calculate(drivetrain.getEncAvg()),
             turnController.calculate(drivetrain.getHeading())
@@ -43,7 +44,7 @@ public class DriveAuto implements Command {
 
     @Override
     public boolean isFinished() {
-        return driveController.atSetpoint() && turnController.atSetpoint();
+        return driveController.atSetpoint();
     }
 
     @Override
