@@ -13,26 +13,39 @@ public class TurnAuto implements Command {
     private double degrees;
     private static final double INTEGRATOR_RANGE = 10.0;
     private static final double ki = 0.02;
+    private int count;
+    private boolean jankyMode;
 
-    public TurnAuto(Drivetrain drivetrain, double degrees) {
+    public TurnAuto(Drivetrain drivetrain, double degrees, boolean jankyMode) {
         this.drivetrain = drivetrain;
         this.degrees = degrees;
-        pid = new PIDController(0.007, 0, 10);
-        pid.setTolerance(1.0, 0.01);
+        this.jankyMode = jankyMode;
+        pid = new PIDController(0.0072, 0.001, 0.06);//new PIDController(0.008, 0.00001, 0.05);
+    }
+
+    public TurnAuto(Drivetrain drivetrain, double degrees) {
+        this(drivetrain, degrees, false);
     }
 
     @Override
     public void initialize() {
+        //pid.setIntegratorRange(SmartDashboard.getNumber("lbt", 0), SmartDashboard.getNumber("rbt", 0));//pid.setIntegratorRange(0.0025, 0.004);
         System.out.println(drivetrain.getHeading());
         pid.reset();
         System.out.println(degrees);
         pid.setSetpoint(degrees);
+        pid.setTolerance(jankyMode ? 4.0 : 1.5);
+        count = 0;
+    }
+
+    private double clamp(double x, double min, double max) {
+        return Math.max(Math.min(x, max), min);
     }
 
     @Override
     public void execute() {
-        pid.setI(Math.abs(pid.getPositionError()) <= INTEGRATOR_RANGE ? ki : 0.0);
-        double power = pid.calculate(drivetrain.getHeading());
+        SmartDashboard.putNumber("err", pid.getPositionError());
+        double power = clamp(pid.calculate(drivetrain.getHeading()), -.5, .5);
         drivetrain.arcadeDrive(0.0, power);
     }
 
@@ -44,7 +57,8 @@ public class TurnAuto implements Command {
 
     @Override
     public boolean isFinished() {
-        return pid.atSetpoint();
+        count = pid.atSetpoint() ? count + 1 : 0;
+        return count >= 10;
     }
 
     @Override

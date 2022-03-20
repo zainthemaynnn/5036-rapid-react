@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -59,33 +60,46 @@ public class TwoBlue extends SequentialCommandGroup {
       new InstantCommand(() -> System.out.println("complete"))*/
       new InstantCommand(() -> System.out.println("begin")),
       new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d())),
-      new InstantCommand(() -> drivetrain.setRampRate(0.65)),
+      new InstantCommand(() -> drivetrain.setRampRate(0)),
       new AdmitCargo(intake),
       new InstantCommand(() -> arm.override(true)),
       new RunCommand(() -> {}).withInterrupt(arm::isDown),
 
       new InstantCommand(() -> System.out.println("1")),
-      new DriveToPoint(drivetrain, new Pose2d(-12, +70.0, new Rotation2d(Math.toRadians(0))), 0.55, 0.70),
+      //new DriveToPoint(drivetrain, new Pose2d(-12, +70.0, new Rotation2d(Math.toRadians(0))), 0.55, 0.70),
+      new DriveAuto(drivetrain, +72.0),
       new WaitCommand(0.25),
 
       new InstantCommand(() -> System.out.println("2")),
       new InstantCommand(() -> System.out.println(drivetrain.getHeading())),
-      new TurnAuto(drivetrain, +91.0),
+      new TurnAuto(drivetrain, +94.0),
       new WaitCommand(0.25),
 
       new InstantCommand(() -> System.out.println("3")),
       new DriveAuto(drivetrain, +89.0),
-      new WaitCommand(1.00),
-
-      new InstantCommand(() -> arm.override(false)),
-      new RunCommand(() -> {}).withInterrupt(arm::isUp),
+      new WaitCommand(0.25),
       new StopIntake(intake),
-      new DriveAuto(drivetrain, -70.0),
+      new WaitCommand(1.00),
+      new DriveAuto(drivetrain, -78.0),
+      new WaitCommand(0.25),
 
+      new InstantCommand(() -> System.out.println("4")),
+      new TurnAuto(drivetrain, +180.0, true),
+      new InstantCommand(() -> arm.override(false)),
+      //new RunCommand(() -> {}).withInterrupt(arm::isUp),
+      /*new ParallelRaceGroup(
+        new DriveAuto(drivetrain, +70.0),
+        new SequentialCommandGroup(
+          new WaitCommand(2.0),
+          new RunCommand(() -> {}).withInterrupt(
+            () -> (drivetrain.getVelocity().vxMetersPerSecond + drivetrain.getVelocity().vyMetersPerSecond) / 2 <= 0.05
+          )
+        )
+      ),*/
+
+      new InstantCommand(() -> System.out.println("5")),
       new WaitCommand(0.25),
-      new TurnAuto(drivetrain, +180.0),
-      new WaitCommand(0.25),
-      new DriveAuto(drivetrain, +69.0),
+      new DriveAuto(drivetrain, +70.0),
 
       new EjectCargo(intake),
       new WaitCommand(1.0),

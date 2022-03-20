@@ -139,17 +139,23 @@ public class RobotContainer {
   private final ShuffleboardTab mainTab = Shuffleboard.getTab("Main");
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
-  public void setIdleMode(IdleMode m) {
-    l1.setIdleMode(m); 
-    l2.setIdleMode(m);
-    r1.setIdleMode(m);
-    r2.setIdleMode(m);
-  }
-
   private boolean stopped = true;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    SmartDashboard.putNumber("P", 0);
+    SmartDashboard.setPersistent("P");
+    SmartDashboard.putNumber("I", 0);
+    SmartDashboard.setPersistent("I");
+    SmartDashboard.putNumber("D", 0);
+    SmartDashboard.setPersistent("D");
+    SmartDashboard.putNumber("Pt", 0);
+    SmartDashboard.setPersistent("Pt");
+    SmartDashboard.putNumber("It", 0);
+    SmartDashboard.setPersistent("It");
+    SmartDashboard.putNumber("Dt", 0);
+    SmartDashboard.setPersistent("Dt");
+
     DriveToPoint.init(drivetrain);
     drivetrain.setDefaultCommand(arcadeDrive);
 
@@ -228,7 +234,10 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     driver.A.whileActiveOnce(new TwoBlue(drivetrain, arm, intake));
-    driver.X.whenInactive(new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d()), drivetrain));
+    driver.X.whileActiveOnce(new SequentialCommandGroup(new InstantCommand(() -> {
+      drivetrain.resetOdometry(new Pose2d());
+    }, drivetrain),
+    new TurnAuto(drivetrain, +90)));
     driver.Y.whenActive(new InstantCommand(
       () -> {
         if (idleMode == IdleMode.kBrake) {
@@ -236,7 +245,7 @@ public class RobotContainer {
         } else {
           idleMode = IdleMode.kBrake;
         }
-        setIdleMode(idleMode);
+        drivetrain.setIdleMode(idleMode);
       },
       drivetrain
     ));
@@ -301,6 +310,6 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     drivetrain.resetOdometry(new Pose2d());
-    return new TwoBlue(drivetrain, arm, intake).withTimeout(15.0);
+    return new TwoBlue(drivetrain, arm, intake);//.withTimeout(15.0);
   }
 }

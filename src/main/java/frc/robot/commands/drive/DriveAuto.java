@@ -11,18 +11,19 @@ public class DriveAuto implements Command {
     private Drivetrain drivetrain;
     private PIDController driveController, turnController;
     private double distance;
+    private double count;
 
     public DriveAuto(Drivetrain drivetrain, double distance) {
         this.drivetrain = drivetrain;
         this.distance = distance;
-        driveController = new PIDController(0.015, 0, 0.03);
-        driveController.setTolerance(1.5, .10);
-        turnController = new PIDController(0.007, 0, 10);
-        turnController.setTolerance(2.0);
+        driveController = new PIDController(0.012, 0.0001, 0);//new PIDController(0.015, 0, 1);
+        driveController.setTolerance(1.0);
+        turnController = new PIDController(0.0072, 0.01, 0.06);
     }
 
     @Override
     public void initialize() {
+        driveController.setIntegratorRange(0.00005, 0.00015);
         driveController.reset();
         driveController.setSetpoint(drivetrain.getEncAvg() + distance);
         turnController.reset();
@@ -44,7 +45,10 @@ public class DriveAuto implements Command {
 
     @Override
     public boolean isFinished() {
-        return driveController.atSetpoint();
+        SmartDashboard.putNumber("e", driveController.getPositionError());
+        SmartDashboard.putNumber("et", turnController.getPositionError());
+        count = driveController.atSetpoint() ? count + 1 : 0;
+        return count >= 10;
     }
 
     @Override

@@ -62,9 +62,19 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         this.encoderR = encoderR;
         this.gyro = gyro;
 
+        final int CURR_LIM = 40;
+
+        l1.enableVoltageCompensation(12.0);
+        l1.setSmartCurrentLimit(CURR_LIM);
         l1.setInverted(false);
+        l2.enableVoltageCompensation(12.0);
+        l2.setSmartCurrentLimit(CURR_LIM);
         l2.setInverted(false);
+        r1.enableVoltageCompensation(12.0);
+        r1.setSmartCurrentLimit(CURR_LIM);
         r1.setInverted(true);
+        r2.enableVoltageCompensation(12.0);
+        r1.setSmartCurrentLimit(CURR_LIM);
         r2.setInverted(true);
         encoderL.setPositionConversionFactor(42);
         encoderR.setPositionConversionFactor(42);
@@ -207,6 +217,13 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         r1.setOpenLoopRampRate(rampRate);
         r2.setOpenLoopRampRate(rampRate);
     }
+
+    public void setIdleMode(IdleMode m) {
+        l1.setIdleMode(m); 
+        l2.setIdleMode(m);
+        r1.setIdleMode(m);
+        r2.setIdleMode(m);
+      }
 
     @Override
     public void close() {
