@@ -15,8 +15,10 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.commands.arm.ArmDown;
 import frc.robot.commands.arm.WaitForArmDown;
 import frc.robot.commands.drive.DriveAuto;
+import frc.robot.commands.drive.DriveAutoJank;
 import frc.robot.commands.drive.DriveToPoint;
 import frc.robot.commands.drive.TurnAuto;
+import frc.robot.commands.drive.TurnAutoJank;
 import frc.robot.commands.intake.AdmitCargo;
 import frc.robot.commands.intake.EjectCargo;
 import frc.robot.commands.intake.StopIntake;
@@ -27,85 +29,80 @@ import frc.robot.subsystems.Intake;
 public class TwoBlue extends SequentialCommandGroup {
   public TwoBlue(Drivetrain drivetrain, Arm arm, Intake intake) {
     super(
-      /*new InstantCommand(() -> drivetrain.setRampRate(0.65)),
-      new InstantCommand(() -> System.out.println("0")),
-      new InstantCommand(() -> arm.override(true)),
-      new AdmitCargo(intake),
-      new RunCommand(() -> {}).withInterrupt(arm::isDown),
-
-      new InstantCommand(() -> System.out.println("1")),
-      new DriveAuto(drivetrain, 73.0),
-      new StopIntake(intake),
-      new InstantCommand(() -> System.out.println("2")),
-      new TurnAuto(drivetrain, 95),
-      new AdmitCargo(intake),
-      new InstantCommand(() -> System.out.println("3")),
-      new DriveAuto(drivetrain, 115.0),
-
-      new InstantCommand(() -> System.out.println("4")),
-      new InstantCommand(() -> arm.override(false)),
-      new StopIntake(intake),
-      new InstantCommand(() -> System.out.println("drive")),
-      new DriveAuto(drivetrain, -83.0),
-      new InstantCommand(() -> System.out.println("turn")),
-
-      new TurnAuto(drivetrain, 93),
-      new InstantCommand(() -> System.out.println("after")),
-      new DriveAuto(drivetrain, 56.0),
-      new EjectCargo(intake),
-      new WaitCommand(1.0),
-      new StopIntake(intake),
-      new InstantCommand(() -> drivetrain.setRampRate(0)),
-
-      new InstantCommand(() -> System.out.println("complete"))*/
-      new InstantCommand(() -> System.out.println("begin")),
+      /*new InstantCommand(() -> System.out.println("begin")),
       new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d())),
-      new InstantCommand(() -> drivetrain.setRampRate(0)),
+      new InstantCommand(() -> drivetrain.setRampRate(0.65)),
       new AdmitCargo(intake),
       new InstantCommand(() -> arm.override(true)),
-      new RunCommand(() -> {}).withInterrupt(arm::isDown),
 
       new InstantCommand(() -> System.out.println("1")),
       //new DriveToPoint(drivetrain, new Pose2d(-12, +70.0, new Rotation2d(Math.toRadians(0))), 0.55, 0.70),
       new DriveAuto(drivetrain, +72.0),
-      new WaitCommand(0.25),
+      new WaitCommand(0.15),
+      new StopIntake(intake),
 
       new InstantCommand(() -> System.out.println("2")),
       new InstantCommand(() -> System.out.println(drivetrain.getHeading())),
       new TurnAuto(drivetrain, +94.0),
-      new WaitCommand(0.25),
+      new AdmitCargo(intake),
+      new WaitCommand(0.1),
 
       new InstantCommand(() -> System.out.println("3")),
       new DriveAuto(drivetrain, +89.0),
-      new WaitCommand(0.25),
+      new WaitCommand(0.15),
       new StopIntake(intake),
-      new WaitCommand(1.00),
+      new InstantCommand(() -> arm.override(false)),
       new DriveAuto(drivetrain, -78.0),
-      new WaitCommand(0.25),
+      new WaitCommand(0.1),
 
       new InstantCommand(() -> System.out.println("4")),
-      new TurnAuto(drivetrain, +180.0, true),
-      new InstantCommand(() -> arm.override(false)),
+      new TurnAuto(drivetrain, +186.0),
       //new RunCommand(() -> {}).withInterrupt(arm::isUp),
-      /*new ParallelRaceGroup(
-        new DriveAuto(drivetrain, +70.0),
-        new SequentialCommandGroup(
-          new WaitCommand(2.0),
-          new RunCommand(() -> {}).withInterrupt(
-            () -> (drivetrain.getVelocity().vxMetersPerSecond + drivetrain.getVelocity().vyMetersPerSecond) / 2 <= 0.05
-          )
-        )
-      ),*/
+      new ParallelRaceGroup(
+        new DriveAuto(drivetrain, +70.0, true)
+      ),
 
       new InstantCommand(() -> System.out.println("5")),
-      new WaitCommand(0.25),
-      new DriveAuto(drivetrain, +70.0),
+      new WaitCommand(0.1),
 
       new EjectCargo(intake),
       new WaitCommand(1.0),
       new StopIntake(intake),
 
+      new DriveAuto(drivetrain, -3.0),
+      new TurnAuto(drivetrain, +270.0),
+
       new InstantCommand(() -> drivetrain.setRampRate(0)),
+      new InstantCommand(() -> System.out.println("complete"))*/
+
+      new InstantCommand(() -> System.out.println("begin")),
+      new InstantCommand(() -> drivetrain.resetOdometry(new Pose2d())),
+      new InstantCommand(() -> drivetrain.setRampRate(0.65)),
+      new AdmitCargo(intake),
+      new InstantCommand(() -> arm.override(true)),
+
+      new DriveAuto(drivetrain, +36.0),
+      new WaitCommand(0.1),
+      new StopIntake(intake),
+
+      new InstantCommand(() -> arm.override(false)),
+
+      new DriveAuto(drivetrain, -60.0),
+      new TurnAutoJank(drivetrain, +155.0),
+
+      new EjectCargo(intake),
+      new WaitCommand(1.0),
+      new StopIntake(intake),
+
+      /*new InstantCommand(() -> arm.override(true)),
+
+      new DriveAuto(drivetrain, -68.0),
+      new TurnAuto(drivetrain, +270.0),
+
+      new AdmitCargo(intake),
+      new DriveAutoJank(drivetrain, +150.0),
+      new StopIntake(intake),*/
+
       new InstantCommand(() -> System.out.println("complete"))
     );
   }

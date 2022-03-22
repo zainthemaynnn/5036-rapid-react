@@ -237,7 +237,7 @@ public class RobotContainer {
     driver.X.whileActiveOnce(new SequentialCommandGroup(new InstantCommand(() -> {
       drivetrain.resetOdometry(new Pose2d());
     }, drivetrain),
-    new TurnAuto(drivetrain, +90)));
+    new DriveAuto(drivetrain, +200.0)));
     driver.Y.whenActive(new InstantCommand(
       () -> {
         if (idleMode == IdleMode.kBrake) {

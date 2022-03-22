@@ -7,29 +7,29 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.Drivetrain;
 
-public class DriveAuto implements Command {
+public class DriveAutoJank implements Command {
     private Drivetrain drivetrain;
     private PIDController driveController, turnController;
     private double distance;
     private double maxSpeed;
 
-    public DriveAuto(Drivetrain drivetrain, double distance, double maxSpeed, boolean stopAtWall) {
+    public DriveAutoJank(Drivetrain drivetrain, double distance, double maxSpeed, boolean stopAtWall) {
         this.drivetrain = drivetrain;
         this.distance = distance;
-        driveController = new PIDController(1.2e-2, 1e-4, 0);
+        driveController = new PIDController(1.5e-2, 9e-2, 6.5e-3);
         // /driveController.setTolerance(stopAtWall ? 10.0 : 3.0, stopAtWall ? 0.10 : 1);
         turnController = new PIDController(7e-3, /*1e-2*/0, 8e-4);
     }
 
-    public DriveAuto(Drivetrain drivetrain, double distance, double maxSpeed) {
+    public DriveAutoJank(Drivetrain drivetrain, double distance, double maxSpeed) {
         this(drivetrain, distance, maxSpeed, false);
     }
 
-    public DriveAuto(Drivetrain drivetrain, double distance, boolean stopAtWall) {
+    public DriveAutoJank(Drivetrain drivetrain, double distance, boolean stopAtWall) {
         this(drivetrain, distance, 1, stopAtWall);
     }
 
-    public DriveAuto(Drivetrain drivetrain, double distance) {
+    public DriveAutoJank(Drivetrain drivetrain, double distance) {
         this(drivetrain, distance, false);
     }
 

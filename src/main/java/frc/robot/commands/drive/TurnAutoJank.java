@@ -7,22 +7,21 @@ import frc.math.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.Drivetrain;
 
-public class TurnAuto implements Command {
+public class TurnAutoJank implements Command {
     private Drivetrain drivetrain;
     private PIDController pid;
     private double degrees;
     private int count;
 
-    public TurnAuto(Drivetrain drivetrain, double degrees) {
+    public TurnAutoJank(Drivetrain drivetrain, double degrees) {
         this.drivetrain = drivetrain;
         this.degrees = degrees;
-        pid = new PIDController(7e-3, 1e-2, 8e-4);
+        pid = new PIDController(4e-3, 1e-3, 0);
         pid.setTolerance(2.0);
     }
 
     @Override
     public void initialize() {
-        //pid.setIntegratorRange(SmartDashboard.getNumber("lbt", 0), SmartDashboard.getNumber("rbt", 0));//pid.setIntegratorRange(0.0025, 0.004);
         System.out.println(drivetrain.getHeading());
         pid.reset();
         System.out.println(degrees);
@@ -32,7 +31,7 @@ public class TurnAuto implements Command {
 
     @Override
     public void execute() {
-        pid.setI(pid.getPositionError() < 10.0 ? 1e-2 : 0);
+        pid.setI(pid.getPositionError() < 10.0 ? 1e-3 : 0);
         SmartDashboard.putNumber("err", pid.getPositionError());
         double power = pid.calculate(drivetrain.getHeading());
         drivetrain.arcadeDrive(0.0, power);
