@@ -36,16 +36,16 @@ public class DriveAuto implements Command {
     @Override
     public void initialize() {
         driveController.reset();
-        driveController.setSetpoint(drivetrain.getEncAvg() + distance);
+        driveController.setSetpoint(drivetrain.getEncPosition() + distance);
         turnController.reset();
-        turnController.setSetpoint(drivetrain.getHeading());
+        turnController.setSetpoint(drivetrain.getAngle());
     }
 
     @Override
     public void execute() {
         drivetrain.arcadeDrive(
-            driveController.calculate(drivetrain.getEncAvg()),
-            turnController.calculate(drivetrain.getHeading())
+            driveController.calculate(drivetrain.getEncPosition()),
+            turnController.calculate(drivetrain.getAngle())
         );
     }
 

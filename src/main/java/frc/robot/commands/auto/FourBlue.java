@@ -66,7 +66,7 @@ public class FourBlue extends SequentialCommandGroup {
       new ParallelCommandGroup(
         new DriveAutoJank(drivetrain, +178.0, 0.20, true),
         new SequentialCommandGroup(
-          new WaitUntilCommand(() -> drivetrain.getEncAvg() >= +120.0),
+          new WaitUntilCommand(() -> drivetrain.getEncPosition() >= +120.0),
           new AdmitCargo(intake)
         )
       ),

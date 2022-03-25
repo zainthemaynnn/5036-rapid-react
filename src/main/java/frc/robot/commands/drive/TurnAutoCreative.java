@@ -23,7 +23,7 @@ public class TurnAutoCreative implements Command {
 
     @Override
     public void initialize() {
-        System.out.println(drivetrain.getHeading());
+        System.out.println(drivetrain.getAngle());
         pid.reset();
         System.out.println(degrees);
         pid.setSetpoint(degrees);
@@ -33,13 +33,13 @@ public class TurnAutoCreative implements Command {
     @Override
     public void execute() {
         SmartDashboard.putNumber("err", pid.getPositionError());
-        double power = Limits.siglim(pid.calculate(drivetrain.getHeading()), 0.12, 1);
+        double power = Limits.siglim(pid.calculate(drivetrain.getAngle()), 0.12, 1);
         drivetrain.arcadeDrive(0.0, power);
     }
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println(drivetrain.getHeading());
+        System.out.println(drivetrain.getAngle());
         drivetrain.stop();
     }
 

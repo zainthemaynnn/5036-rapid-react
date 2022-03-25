@@ -36,17 +36,17 @@ public class DriveAutoJank implements Command {
     @Override
     public void initialize() {
         driveController.reset();
-        driveController.setSetpoint(drivetrain.getEncAvg() + distance);
+        driveController.setSetpoint(drivetrain.getEncPosition() + distance);
         turnController.reset();
-        turnController.setSetpoint(drivetrain.getHeading());
+        turnController.setSetpoint(drivetrain.getAngle());
     }
 
     @Override
     public void execute() {
-        double pow = driveController.calculate(drivetrain.getEncAvg());
+        double pow = driveController.calculate(drivetrain.getEncPosition());
         drivetrain.arcadeDrive(
             pow,
-            turnController.getSetpoint() - drivetrain.getHeading() > 0 ? -0.15 : 0.15
+            turnController.getSetpoint() - drivetrain.getAngle() > 0 ? -0.15 : 0.15
         );
     }
 
@@ -58,7 +58,7 @@ public class DriveAutoJank implements Command {
     @Override
     public boolean isFinished() {
         SmartDashboard.putNumber("e", driveController.getPositionError());
-        SmartDashboard.putNumber("et", turnController.getSetpoint() - drivetrain.getHeading());
+        SmartDashboard.putNumber("et", turnController.getSetpoint() - drivetrain.getAngle());
         return driveController.atSetpoint();
     }
 

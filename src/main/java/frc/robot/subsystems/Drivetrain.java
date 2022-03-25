@@ -162,11 +162,11 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         r2.stopMotor();
     }
 
-    public double getHeading() {
+    public double getAngle() {
         return gyro.getAngle();
     }
 
-    public double getHeadingRate() {
+    public double getAngularVelocity() {
         return gyro.getRate();
     }
 
@@ -178,8 +178,12 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         return encoderR.getPosition() / 22.953;
     }
 
-    public double getEncAvg() {
+    public double getEncPosition() {
         return (getEncL() + getEncR()) / 2;
+    }
+
+    public double getEncVelocity() {
+        return (encoderL.getVelocity() / 22.953 + encoderR.getVelocity() / 22.953) / 2;
     }
 
     public Pose2d getPose() {
@@ -204,9 +208,9 @@ public class Drivetrain implements Subsystem, AutoCloseable {
             Units.metersToInches(poseMeters.getY()),
             poseMeters.getRotation().minus(new Rotation2d(Math.toRadians(90)))
         );
-        velocity = (getEncAvg() - prevDist) / 0.02;
-        prevDist = getEncAvg();
-        SmartDashboard.putNumber("enc", getEncAvg());
+        velocity = (getEncPosition() - prevDist) / 0.02;
+        prevDist = getEncPosition();
+        SmartDashboard.putNumber("enc", getEncPosition());
     }
 
     public void resetOdometry(Pose2d newPose) {

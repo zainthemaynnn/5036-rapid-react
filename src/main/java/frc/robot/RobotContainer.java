@@ -33,6 +33,7 @@ import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import frc.commands.OrElseCommand;
 import frc.hid.PS4Controller;
 import frc.hid.XBOXController;
+import frc.math.VelocityTuner;
 import frc.robot.commands.auto.ThreeBlue;
 import frc.robot.commands.auto.FourBlue;
 import frc.robot.commands.auto.Snipe;
@@ -145,19 +146,6 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    SmartDashboard.putNumber("P", 0);
-    SmartDashboard.setPersistent("P");
-    SmartDashboard.putNumber("I", 0);
-    SmartDashboard.setPersistent("I");
-    SmartDashboard.putNumber("D", 0);
-    SmartDashboard.setPersistent("D");
-    SmartDashboard.putNumber("Pt", 0);
-    SmartDashboard.setPersistent("Pt");
-    SmartDashboard.putNumber("It", 0);
-    SmartDashboard.setPersistent("It");
-    SmartDashboard.putNumber("Dt", 0);
-    SmartDashboard.setPersistent("Dt");
-    
     DriveToPoint.init(drivetrain);
     drivetrain.setDefaultCommand(arcadeDrive);
 
@@ -233,20 +221,25 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    driver.A.whileActiveOnce(new FourBlue(drivetrain, arm, intake));
-    driver.X.whileActiveOnce(new SequentialCommandGroup(new InstantCommand(() -> {
-      drivetrain.resetOdometry(new Pose2d());
-    }, drivetrain),
-    new TurnAutoCreative(drivetrain, -120.0)));
-    driver.Y.whenActive(new InstantCommand(
-      () -> {
-        if (idleMode == IdleMode.kBrake) {
-          idleMode = IdleMode.kCoast;
-        } else {
-          idleMode = IdleMode.kBrake;
-        }
-        drivetrain.setIdleMode(idleMode);
-      },
+    VelocityTuner driveVelocityTuner = new VelocityTuner(
+      drivetrain::getEncPosition,
+      drivetrain::getEncVelocity,
+      out -> drivetrain.arcadeDrive(out, 0.0)
+    );
+
+    VelocityTuner turnVelocityTuner = new VelocityTuner(
+      drivetrain::getAngle,
+      drivetrain::getAngularVelocity,
+      out -> drivetrain.arcadeDrive(0.0, out)
+    );
+
+    driver.X.whileActiveOnce(new RunCommand(
+      () -> driveVelocityTuner.driveVelocity(12.0),
+      drivetrain
+    ));
+
+    driver.A.whileActiveOnce(new RunCommand(
+      () -> turnVelocityTuner.driveVelocity(90.0),
       drivetrain
     ));
 
