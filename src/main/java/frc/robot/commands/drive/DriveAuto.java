@@ -17,8 +17,8 @@ public class DriveAuto implements Command {
         this.drivetrain = drivetrain;
         this.distance = distance;
         driveController = new PIDController(1.2e-2, 1e-4, 0);
-        // /driveController.setTolerance(stopAtWall ? 10.0 : 3.0, stopAtWall ? 0.10 : 1);
-        turnController = new PIDController(7e-3, /*1e-2*/0, 8e-4);
+        driveController.setTolerance(stopAtWall ? 10.0 : 2.0, stopAtWall ? 0.10 : 1);
+        turnController = new PIDController(7e-30, 0, 8e-4);
     }
 
     public DriveAuto(Drivetrain drivetrain, double distance, double maxSpeed) {
@@ -35,8 +35,6 @@ public class DriveAuto implements Command {
 
     @Override
     public void initialize() {
-        driveController.setPID(SmartDashboard.getNumber("P", 0), Math.abs(driveController.getPositionError()) < 10.0 ? SmartDashboard.getNumber("I", 0) : 0, SmartDashboard.getNumber("D", 0));
-        //driveController.setIntegratorRange(0.00005, 0.00015);
         driveController.reset();
         driveController.setSetpoint(drivetrain.getEncAvg() + distance);
         turnController.reset();

@@ -17,8 +17,8 @@ public class DriveAutoJank implements Command {
         this.drivetrain = drivetrain;
         this.distance = distance;
         driveController = new PIDController(1.5e-2, 9e-2, 6.5e-3);
-        // /driveController.setTolerance(stopAtWall ? 10.0 : 3.0, stopAtWall ? 0.10 : 1);
-        turnController = new PIDController(7e-3, /*1e-2*/0, 8e-4);
+        driveController.setTolerance(stopAtWall ? 10.0 : 2.0, 0.10);
+        turnController = new PIDController(3e-2, /*1e-2*/0, 8e-4);
     }
 
     public DriveAutoJank(Drivetrain drivetrain, double distance, double maxSpeed) {
@@ -35,8 +35,6 @@ public class DriveAutoJank implements Command {
 
     @Override
     public void initialize() {
-        driveController.setPID(SmartDashboard.getNumber("P", 0), Math.abs(driveController.getPositionError()) < 10.0 ? SmartDashboard.getNumber("I", 0) : 0, SmartDashboard.getNumber("D", 0));
-        //driveController.setIntegratorRange(0.00005, 0.00015);
         driveController.reset();
         driveController.setSetpoint(drivetrain.getEncAvg() + distance);
         turnController.reset();
@@ -45,9 +43,10 @@ public class DriveAutoJank implements Command {
 
     @Override
     public void execute() {
+        double pow = driveController.calculate(drivetrain.getEncAvg());
         drivetrain.arcadeDrive(
-            driveController.calculate(drivetrain.getEncAvg()),
-            turnController.calculate(drivetrain.getHeading())
+            pow,
+            turnController.getSetpoint() - drivetrain.getHeading() > 0 ? -0.15 : 0.15
         );
     }
 
@@ -59,7 +58,7 @@ public class DriveAutoJank implements Command {
     @Override
     public boolean isFinished() {
         SmartDashboard.putNumber("e", driveController.getPositionError());
-        SmartDashboard.putNumber("et", turnController.getPositionError());
+        SmartDashboard.putNumber("et", turnController.getSetpoint() - drivetrain.getHeading());
         return driveController.atSetpoint();
     }
 

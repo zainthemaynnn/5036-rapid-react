@@ -61,6 +61,10 @@ public class Arm implements Subsystem {
         motor.set(power);
     }
 
+    public void setIdleMode(IdleMode idleMode) {
+        //motor
+    }
+
     public void override(boolean on) {
         overridden = on;
     }

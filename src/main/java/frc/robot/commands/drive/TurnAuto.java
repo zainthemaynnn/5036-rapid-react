@@ -3,6 +3,7 @@ package frc.robot.commands.drive;
 import java.util.Set;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.math.Limits;
 import frc.math.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.Drivetrain;
@@ -34,7 +35,7 @@ public class TurnAuto implements Command {
     public void execute() {
         pid.setI(pid.getPositionError() < 10.0 ? 1e-2 : 0);
         SmartDashboard.putNumber("err", pid.getPositionError());
-        double power = pid.calculate(drivetrain.getHeading());
+        double power = Limits.siglim(pid.calculate(drivetrain.getHeading()), 0.12, 1);
         drivetrain.arcadeDrive(0.0, power);
     }
 

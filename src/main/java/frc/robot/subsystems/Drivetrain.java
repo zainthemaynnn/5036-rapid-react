@@ -38,6 +38,8 @@ public class Drivetrain implements Subsystem, AutoCloseable {
     private DifferentialDriveWheelSpeeds wheelSpeeds;
     private SendableChassisSpeeds chassisSpeeds;
     private DifferentialDriveOdometry odometry;
+    private double prevDist = 0.0;
+    private double velocity = 0.0;
     private Pose2d pose;
 
     public RamseteController ramseteController = new RamseteController();
@@ -184,8 +186,8 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         return pose;
     }
 
-    public ChassisSpeeds getVelocity() {
-        return chassisSpeeds;
+    public double getVelocity() {
+        return velocity;
     }
 
     public void updateOdometry() {
@@ -202,6 +204,9 @@ public class Drivetrain implements Subsystem, AutoCloseable {
             Units.metersToInches(poseMeters.getY()),
             poseMeters.getRotation().minus(new Rotation2d(Math.toRadians(90)))
         );
+        velocity = (getEncAvg() - prevDist) / 0.02;
+        prevDist = getEncAvg();
+        SmartDashboard.putNumber("enc", getEncAvg());
     }
 
     public void resetOdometry(Pose2d newPose) {
