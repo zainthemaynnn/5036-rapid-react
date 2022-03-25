@@ -265,7 +265,10 @@ public class RobotContainer {
     ));
 
     driver.leftBumper.whileActiveOnce(new StartEndCommand(
-      climber::retract,
+      () -> {
+        arm.override(true);
+        climber.retract();
+      },
       climber::stop,
       climber
     ));
