@@ -70,6 +70,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_robotContainer.drivetrain.setIdleMode(IdleMode.kBrake);
+    m_robotContainer.drivetrain.setRampRate(0.65);
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
@@ -91,6 +92,7 @@ public class Robot extends TimedRobot {
     // continue until interrupted by another command, remove
     // this line or comment it out.
     m_robotContainer.drivetrain.setIdleMode(IdleMode.kBrake);
+    m_robotContainer.drivetrain.setRampRate(0);
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }

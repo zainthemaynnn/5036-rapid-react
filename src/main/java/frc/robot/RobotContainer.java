@@ -34,7 +34,9 @@ import frc.commands.OrElseCommand;
 import frc.hid.PS4Controller;
 import frc.hid.XBOXController;
 import frc.robot.commands.auto.ThreeBlue;
+import frc.robot.commands.auto.TwoBlue;
 import frc.robot.commands.auto.FourBlue;
+import frc.robot.commands.auto.Nothing;
 import frc.robot.commands.auto.Snipe;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
@@ -218,9 +220,12 @@ public class RobotContainer {
     r2.setOpenLoopRampRate(rampRate);
 
     mainTab.add("Auto chooser", autoChooser);
+    autoChooser.addOption("2 blue", new TwoBlue(drivetrain, arm, intake));
     autoChooser.addOption("3 blue", new ThreeBlue(drivetrain, arm, intake));
     autoChooser.addOption("4 blue", new FourBlue(drivetrain, arm, intake));
     autoChooser.addOption("Snipe blue", new Snipe(drivetrain, arm, intake));
+
+    autoChooser.addOption("Nothing", new Nothing(drivetrain, arm, intake));
 
     // Configure the button bindings
     configureButtonBindings();

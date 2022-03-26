@@ -87,6 +87,7 @@ public class FourBlue extends SequentialCommandGroup {
       new WaitCommand(1.0),
       new StopIntake(intake),
 
+      new InstantCommand(() -> drivetrain.setRampRate(0)),
       new InstantCommand(() -> System.out.println("complete"))
     );
   }
