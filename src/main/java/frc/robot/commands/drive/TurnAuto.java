@@ -24,7 +24,7 @@ public class TurnAuto implements Command {
     @Override
     public void initialize() {
         //pid.setIntegratorRange(SmartDashboard.getNumber("lbt", 0), SmartDashboard.getNumber("rbt", 0));//pid.setIntegratorRange(0.0025, 0.004);
-        System.out.println(drivetrain.getHeading());
+        System.out.println(drivetrain.getAngle());
         pid.reset();
         System.out.println(degrees);
         pid.setSetpoint(degrees);
@@ -35,13 +35,13 @@ public class TurnAuto implements Command {
     public void execute() {
         pid.setI(pid.getPositionError() < 10.0 ? 1e-2 : 0);
         SmartDashboard.putNumber("err", pid.getPositionError());
-        double power = Limits.siglim(pid.calculate(drivetrain.getHeading()), 0.12, 1);
+        double power = Limits.siglim(pid.calculate(drivetrain.getAngle()), 0.12, 1);
         drivetrain.arcadeDrive(0.0, power);
     }
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println(drivetrain.getHeading());
+        System.out.println(drivetrain.getAngle());
         drivetrain.stop();
     }
 
