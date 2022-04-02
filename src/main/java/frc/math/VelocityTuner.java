@@ -4,7 +4,6 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.subsystems.Drivetrain;
 
 public class VelocityTuner {
     private PIDController pPid, vPid;
@@ -23,6 +22,10 @@ public class VelocityTuner {
         SmartDashboard.putNumber("vP", 0);
         SmartDashboard.putNumber("vI", 0);
         SmartDashboard.putNumber("vD", 0);
+        SmartDashboard.putNumber("velocity", 0);
+        SmartDashboard.putNumber("dv", 0);
+        SmartDashboard.putNumber("position", 0);
+        SmartDashboard.putNumber("dp", 0);
     }
 
     public void driveVelocity(double target) {

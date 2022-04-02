@@ -36,6 +36,7 @@ import frc.hid.XBOXController;
 import frc.math.VelocityTuner;
 import frc.robot.commands.auto.ThreeBlue;
 import frc.robot.commands.auto.TwoBlue;
+import frc.robot.commands.auto.DriveStraight;
 import frc.robot.commands.auto.FourBlue;
 import frc.robot.commands.auto.Nothing;
 import frc.robot.commands.auto.Snipe;
@@ -212,6 +213,7 @@ public class RobotContainer {
     autoChooser.addOption("3 blue", new ThreeBlue(drivetrain, arm, intake));
     autoChooser.addOption("4 blue", new FourBlue(drivetrain, arm, intake));
     autoChooser.addOption("Snipe blue", new Snipe(drivetrain, arm, intake));
+    autoChooser.addOption("Taxi", new DriveStraight(drivetrain, arm, intake));
 
     autoChooser.addOption("Nothing", new Nothing(drivetrain, arm, intake));
 

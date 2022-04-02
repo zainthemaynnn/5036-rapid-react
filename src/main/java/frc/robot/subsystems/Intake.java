@@ -18,8 +18,8 @@ public class Intake implements Subsystem {
         this.uno = dos;
         uno.setNeutralMode(NeutralMode.Brake);
         dos.setNeutralMode(NeutralMode.Brake);
-        uno.enableVoltageCompensation(true);
-        dos.enableVoltageCompensation(true);
+        uno.enableVoltageCompensation(false);
+        dos.enableVoltageCompensation(false);
         //this.pdp = pdp;
     }
 

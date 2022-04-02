@@ -47,7 +47,7 @@ public class ThreeBlue extends SequentialCommandGroup {
 
       new InstantCommand(() -> System.out.println("2")),
       new InstantCommand(() -> System.out.println(drivetrain.getAngle())),
-      new TurnAuto(drivetrain, +94.0),
+      new TurnAuto(drivetrain, +94.5),
       new AdmitCargo(intake),
       new WaitCommand(0.1),
 
