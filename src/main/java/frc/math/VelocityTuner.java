@@ -37,6 +37,7 @@ public class VelocityTuner {
 
     public void drivePosition(double target) {
         pPid.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+        vPid.setPID(SmartDashboard.getNumber("vP", 0), SmartDashboard.getNumber("vI", 0), SmartDashboard.getNumber("vD", 0));
         output.accept(
             vPid.calculate(
                 velocity.getAsDouble(),

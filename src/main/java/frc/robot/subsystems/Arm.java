@@ -17,7 +17,7 @@ public class Arm implements Subsystem {
     private boolean overridden = false;
     public static final int ARM_UP = 32;
     public static final int ARM_DOWN = 90;
-    private static final double DOWN_RANGE = 20.0;
+    private static final double DOWN_RANGE = 5.0;
     private static final double UP_RANGE = 5.0;
 
     public Arm(CANSparkMax motor, DigitalInput limitSwitch) {
@@ -41,7 +41,7 @@ public class Arm implements Subsystem {
     }
 
     public boolean isDown() {
-        return !limitSwitch.get();
+        return Math.abs(getPosition() - ARM_DOWN) < DOWN_RANGE;//!limitSwitch.get();
     }
 
     public boolean isUp() {

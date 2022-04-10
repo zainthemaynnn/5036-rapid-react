@@ -36,10 +36,10 @@ import frc.hid.XBOXController;
 import frc.math.VelocityTuner;
 import frc.robot.commands.auto.ThreeBlue;
 import frc.robot.commands.auto.TwoBlue;
-import frc.robot.commands.auto.DriveStraight;
 import frc.robot.commands.auto.FourBlue;
 import frc.robot.commands.auto.Nothing;
 import frc.robot.commands.auto.Snipe;
+import frc.robot.commands.auto.Taxi;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveAuto;
@@ -213,7 +213,7 @@ public class RobotContainer {
     autoChooser.addOption("3 blue", new ThreeBlue(drivetrain, arm, intake));
     autoChooser.addOption("4 blue", new FourBlue(drivetrain, arm, intake));
     autoChooser.addOption("Snipe blue", new Snipe(drivetrain, arm, intake));
-    autoChooser.addOption("Taxi", new DriveStraight(drivetrain, arm, intake));
+    autoChooser.addOption("Taxi", new Taxi(drivetrain, arm, intake));
 
     autoChooser.addOption("Nothing", new Nothing(drivetrain, arm, intake));
 
@@ -241,12 +241,12 @@ public class RobotContainer {
     );
 
     driver.X.whileActiveOnce(new RunCommand(
-      () -> driveVelocityTuner.driveVelocity(12.0),
+      () -> driveVelocityTuner.drivePosition(60.0),
       drivetrain
     ));
 
     driver.A.whileActiveOnce(new RunCommand(
-      () -> turnVelocityTuner.driveVelocity(90.0),
+      () -> turnVelocityTuner.driveVelocity(45.0),
       drivetrain
     ));
 
