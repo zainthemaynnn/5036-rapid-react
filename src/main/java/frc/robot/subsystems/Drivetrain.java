@@ -1,26 +1,23 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.util.sendable.Sendable;
-import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.math.controller.RamseteController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+
+import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
 
+import frc.math.Limits;
 import frc.robot.Constants;
 import frc.ui.Dashboard;
 import frc.ui.SendableChassisSpeeds;
@@ -28,12 +25,11 @@ import frc.ui.SendableChassisSpeeds;
 public class Drivetrain implements Subsystem, AutoCloseable {
     // motors/sensors
     private CANSparkMax l1, l2, r1, r2;
+    private List<CANSparkMax> motors;
     private RelativeEncoder encoderL, encoderR;
     private AHRS gyro;
-    private IdleMode idleMode;
 
     // odometry
-    private SimpleMotorFeedforward feedforward;
     private DifferentialDriveKinematics kinematics;
     private DifferentialDriveWheelSpeeds wheelSpeeds;
     private SendableChassisSpeeds chassisSpeeds;
@@ -42,9 +38,10 @@ public class Drivetrain implements Subsystem, AutoCloseable {
     private double velocity = 0.0;
     private Pose2d pose;
 
+    private double omega0 = 0.0, omega1 = 0.0;
+
     public RamseteController ramseteController = new RamseteController();
 
-    private final int ks = 0, kv = 0, ka = 0; // TODO
     private double quickStopAccumulator = 0.0;
 
     public Drivetrain(
@@ -60,20 +57,23 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         this.l2 = l2;
         this.r1 = r1;
         this.r2 = r2;
+        motors = List.of(l1, l2, r1, r2);
+
         this.encoderL = encoderL;
         this.encoderR = encoderR;
         this.gyro = gyro;
 
-        final int CURR_LIM = 40;
+        l1.setInverted(false);
+        l2.follow(l1);
+        r1.setInverted(true);
+        r2.follow(r1);
 
-        l1.enableVoltageCompensation(12.0);
-        l1.setSmartCurrentLimit(CURR_LIM);
-        l2.enableVoltageCompensation(12.0);
-        l2.setSmartCurrentLimit(CURR_LIM);
-        r1.enableVoltageCompensation(12.0);
-        r1.setSmartCurrentLimit(CURR_LIM);
-        r2.enableVoltageCompensation(12.0);
-        r1.setSmartCurrentLimit(CURR_LIM);
+        motors.forEach(m -> {
+            m.enableVoltageCompensation(12.0);
+            m.setSmartCurrentLimit(40);
+            m.burnFlash();
+        });
+
         encoderL.setPositionConversionFactor(42);
         encoderR.setPositionConversionFactor(42);
 
@@ -81,7 +81,6 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         odometry = new DifferentialDriveOdometry(
             new Rotation2d(Math.toRadians(-gyro.getAngle()))
         );
-        feedforward = new SimpleMotorFeedforward(ks, kv, ka);
 
         resetOdometry(new Pose2d());
         updateOdometry();
@@ -89,20 +88,12 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         new Dashboard("Drivetrain")
             .add("Gyro", gyro)
             .add("Velocity", chassisSpeeds);
-
-        idleMode = IdleMode.kBrake;
-    }
-
-    private double clamp(double n, double min, double max) {
-        return Math.max(Math.min(n, min), max);
     }
 
     // this is aadi's
     public void arcadeDrive(double throttle, double wheel) {
         l1.set(throttle + wheel);
-        l2.set(throttle + wheel);
         r1.set(throttle - wheel);
-        r2.set(throttle - wheel);
     }
 
     // https://github.com/Team254/FRC-2016-Public/blob/master/src/com/team254/frc2016/CheesyDriveHelper.java
@@ -113,7 +104,7 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         if (isQuickTurn) {
             if (Math.abs(throttle) < 0.2) {
                 double alpha = 0.1;
-                quickStopAccumulator = (1 - alpha) * quickStopAccumulator + alpha * clamp(wheel, -1.0, 1.0) * 2;
+                quickStopAccumulator = (1 - alpha) * quickStopAccumulator + alpha * Limits.lim(wheel, 1.0) * 2;
             }
             overPower = 1.0;
             angularPower = wheel;
@@ -146,16 +137,11 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         }
 
         l1.set(leftPwm);
-        l2.set(leftPwm);
         r1.set(rightPwm);
-        r2.set(rightPwm);
     }
 
     public void stop() {
-        l1.stopMotor();
-        l2.stopMotor();
-        r1.stopMotor();
-        r2.stopMotor();
+        motors.forEach(CANSparkMax::stopMotor);
     }
 
     public double getAngle() {
@@ -163,6 +149,7 @@ public class Drivetrain implements Subsystem, AutoCloseable {
     }
 
     public double getAngularVelocity() {
+        var v = gyro.getRate();
         return gyro.getRate();
     }
 
@@ -216,26 +203,21 @@ public class Drivetrain implements Subsystem, AutoCloseable {
         odometry.resetPosition(newPose, gyro.getRotation2d());
     }
 
-    public void setRampRate(double rampRate) {
-        l1.setOpenLoopRampRate(rampRate);
-        l2.setOpenLoopRampRate(rampRate);
-        r1.setOpenLoopRampRate(rampRate);
-        r2.setOpenLoopRampRate(rampRate);
+    public void resetOdometry() {
+        resetOdometry(new Pose2d());
     }
 
-    public void setIdleMode(IdleMode m) {
-        l1.setIdleMode(m); 
-        l2.setIdleMode(m);
-        r1.setIdleMode(m);
-        r2.setIdleMode(m);
-      }
+    public void setRampRate(double rampRate) {
+        motors.forEach(m -> m.setOpenLoopRampRate(rampRate));
+    }
+
+    public void setIdleMode(IdleMode mode) {
+        motors.forEach(m -> m.setIdleMode(mode));
+    }
 
     @Override
     public void close() {
-        l1.close();
-        l2.close();
-        r1.close();
-        r2.close();
+        motors.forEach(CANSparkMax::close);
         gyro.close();
     }
 }

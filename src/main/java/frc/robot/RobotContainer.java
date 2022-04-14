@@ -4,9 +4,6 @@
 
 package frc.robot;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
@@ -14,24 +11,14 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
-import frc.commands.OrElseCommand;
-import frc.hid.PS4Controller;
 import frc.hid.XBOXController;
 import frc.math.VelocityTuner;
 import frc.robot.commands.auto.ThreeBlue;
@@ -42,12 +29,7 @@ import frc.robot.commands.auto.Snipe;
 import frc.robot.commands.auto.Taxi;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
-import frc.robot.commands.drive.DriveAuto;
 import frc.robot.commands.drive.DriveToPoint;
-import frc.robot.commands.drive.FollowTrajectory;
-import frc.robot.commands.drive.TurnAuto;
-import frc.robot.commands.drive.TurnAutoCreative;
-import frc.robot.commands.drive.FollowTrajectory.PoseData;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
@@ -58,15 +40,10 @@ import frc.robot.subsystems.Blinkin.BlinkinColor;
 import frc.robot.subsystems.Limelight.CameraMode;
 import frc.robot.subsystems.Limelight.LEDState;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.PIDCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.PerpetualCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -127,21 +104,20 @@ public class RobotContainer {
   );
 
   private final Command admitCargo = new StartEndCommand(
-    () -> intake.runPercent(.70),
+    () -> intake.runPercent(-.7),
     () -> intake.stop(),
     intake
   );
 
   private final Command ejectCargo = new SequentialCommandGroup(
-    new RunCommand(() -> intake.runPercent(1)).withTimeout(0.1),
+    new RunCommand(() -> intake.runPercent(+1)).withTimeout(0.1),
     new StartEndCommand(
-      () -> intake.runPercent(-1),
+      () -> intake.runPercent(+1),
       () -> intake.stop(),
       intake
     )
   );
 
-  private IdleMode idleMode = IdleMode.kBrake;
   private final ShuffleboardTab mainTab = Shuffleboard.getTab("Main");
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
@@ -156,19 +132,19 @@ public class RobotContainer {
       () -> {
         if (!arm.overriden()) {
           if (!arm.isUp()) {
-            arm.setPower(-.7);
+            arm.setPower(-.6);
             stopped = false;
           } else {
-            arm.setPower(-.06);
+            arm.setPower(-.05);
             if (!stopped) {
               stopped = true;
             }
           }
         } else {
           if (!arm.isDown()) {
-            arm.setPower(.6);
+            arm.setPower(+.6);
           } else {
-            arm.setPower(.06);
+            arm.setPower(+.2);
           }
         }
       },
