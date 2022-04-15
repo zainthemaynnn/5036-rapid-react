@@ -19,13 +19,13 @@ public class TwoBlue extends SequentialCommandGroup {
             new AdmitCargo(intake),
             new ArmDown(arm),
 
-            new DriveAuto(drivetrain, +36.0),
+            new DriveAuto(drivetrain, +72.0),
             new StopIntake(intake),
 
             new ArmUp(arm)
                 .alongWith(new AdmitCargo(intake)),
 
-            new DriveAuto(drivetrain, -62.0),
+            new DriveAuto(drivetrain, -98.0),
             new StopIntake(intake),
             new TurnAutoJank(drivetrain, +162.0),
 

@@ -6,11 +6,13 @@ package frc.robot;
 
 import com.revrobotics.CANSparkMax.IdleMode;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 
 /**
@@ -34,7 +36,7 @@ public class Robot extends TimedRobot {
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
     m_robotContainer.drivetrain.setIdleMode(IdleMode.kCoast);
-    //CameraServer.startAutomaticCapture();
+    CameraServer.startAutomaticCapture();
   }
 
   /**
@@ -77,7 +79,7 @@ public class Robot extends TimedRobot {
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
-      m_autonomousCommand.andThen(new PrintCommand("auto finished")).schedule();
+      m_autonomousCommand.andThen(new InstantCommand(m_robotContainer.drivetrain::stop)).andThen(new PrintCommand("auto finished")).schedule();
     }
   }
 

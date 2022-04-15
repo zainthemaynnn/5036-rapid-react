@@ -14,8 +14,4 @@ public class ArmDown extends InstantCommand {
   public ArmDown(Arm arm) {
     super(() -> arm.override(true));
   }
-
-  // Called when the command is initially scheduled.
-  @Override
-  public void initialize() {}
 }

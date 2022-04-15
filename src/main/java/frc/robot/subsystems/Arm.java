@@ -25,23 +25,14 @@ public class Arm implements Subsystem {
         this.limitSwitch = limitSwitch;
         encoder = motor.getEncoder();
         motor.setIdleMode(IdleMode.kBrake);
-        SmartDashboard.putNumber("Gravity", 0);
     }
-
-    private double getGravityCompensation() {
-        return Constants.GRAVITY * Math.cos(getPosition());
-    }
-
-    /*private double getVoltageCompensation() {
-        return 12 / RobotContainer.pdp.getVoltage();
-    }*/
 
     public double getPosition() {
         return (encoder.getPosition() * (ARM_DOWN - ARM_UP)) / Constants.ARM_TARGET_ANGLE + ARM_UP;
     }
 
     public boolean isDown() {
-        return Math.abs(getPosition() - ARM_DOWN) < DOWN_RANGE;//!limitSwitch.get();
+        return Math.abs(getPosition() - ARM_DOWN) < DOWN_RANGE;
     }
 
     public boolean isUp() {
@@ -57,7 +48,7 @@ public class Arm implements Subsystem {
     }
 
     public void setPower(double power) {
-        power = -(power/* + getGravityCompensation()*/);// * getVoltageCompensation();
+        power = -(power);
         motor.set(power);
     }
 

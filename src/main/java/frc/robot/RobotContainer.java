@@ -30,6 +30,8 @@ import frc.robot.commands.auto.Taxi;
 import frc.robot.commands.drive.ArcadeDrive;
 import frc.robot.commands.drive.CurvatureDrive;
 import frc.robot.commands.drive.DriveToPoint;
+import frc.robot.commands.intake.AdmitCargo;
+import frc.robot.commands.intake.StopIntake;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
@@ -40,10 +42,13 @@ import frc.robot.subsystems.Blinkin.BlinkinColor;
 import frc.robot.subsystems.Limelight.CameraMode;
 import frc.robot.subsystems.Limelight.LEDState;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -101,12 +106,6 @@ public class RobotContainer {
     driver.leftStickY::value,
     driver.rightStickX::value,
     driver.leftTrigger::get
-  );
-
-  private final Command admitCargo = new StartEndCommand(
-    () -> intake.runPercent(-.7),
-    () -> intake.stop(),
-    intake
   );
 
   private final Command ejectCargo = new SequentialCommandGroup(
@@ -190,7 +189,6 @@ public class RobotContainer {
     autoChooser.addOption("4 blue", new FourBlue(drivetrain, arm, intake));
     autoChooser.addOption("Snipe blue", new Snipe(drivetrain, arm, intake));
     autoChooser.addOption("Taxi", new Taxi(drivetrain, arm, intake));
-
     autoChooser.addOption("Nothing", new Nothing(drivetrain, arm, intake));
 
     // Configure the button bindings
@@ -227,7 +225,8 @@ public class RobotContainer {
     ));
 
     // intake
-    driver.rightTrigger.whileActiveOnce(admitCargo);
+    driver.rightTrigger.whenActive(new AdmitCargo(intake));
+    driver.rightTrigger.whenInactive(new WaitUntilCommand(arm::isUp).andThen(new StopIntake(intake)));
 
     driver.rightBumper.whenInactive(new ParallelCommandGroup(
       ejectCargo,
@@ -258,17 +257,7 @@ public class RobotContainer {
 
     // arm
     driver.rightTrigger
-      .whileActiveOnce(new RunCommand(
-        () -> {
-          arm.override(false);
-          if (!arm.isDown()) {
-            arm.setPower(.60);
-          } else {
-            arm.setPower(.06);
-          }
-        },
-        arm
-      ))
+      .whileActiveOnce(new StartEndCommand(() -> arm.override(true), () -> arm.override(false)))
       /*.whenActive(new InstantCommand(
         () -> {
           driver.setRumble(RumbleType.kLeftRumble, .5);

@@ -12,7 +12,7 @@ public class Taxi extends SequentialCommandGroup {
     public Taxi(Drivetrain drivetrain, Arm arm, Intake intake) {
         super(
             new WaitCommand(3.0),
-            new ArmDown(arm),
+            new ArmDown(arm),                                                                                                                                           
             new WaitCommand(1.0),
             new DriveAuto(drivetrain, +96.0)
         );

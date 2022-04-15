@@ -14,8 +14,4 @@ public class ArmUp extends InstantCommand {
   public ArmUp(Arm arm) {
     super(() -> arm.override(false));
   }
-
-  // Called when the command is initially scheduled.
-  @Override
-  public void initialize() {}
 }

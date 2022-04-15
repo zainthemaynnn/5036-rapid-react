@@ -35,10 +35,10 @@ public class ThreeBlue extends SequentialCommandGroup {
       new AdmitCargo(intake),
       new WaitCommand(0.1),
 
-      new DriveAuto(drivetrain, +89.0),
+      new DriveAuto(drivetrain, +99.0),
       new WaitCommand(0.1),
 
-      new DriveAuto(drivetrain, -78.0),
+      new DriveAuto(drivetrain, -88.0),
       new StopIntake(intake),
       new WaitCommand(0.1),
 

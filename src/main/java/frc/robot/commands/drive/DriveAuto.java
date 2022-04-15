@@ -17,7 +17,7 @@ public class DriveAuto implements Command {
         this.drivetrain = drivetrain;
         this.distance = distance;
         driveController = new PIDController(1.2e-2, 1e-4, 0);
-        driveController.setTolerance(stopAtWall ? 10.0 : 2.0, stopAtWall ? 0.10 : 1);
+        driveController.setTolerance(stopAtWall ? 10.0 : 3.0, stopAtWall ? 0.10 : 1);
         turnController = new PIDController(7e-30, 0, 8e-4);
     }
 
